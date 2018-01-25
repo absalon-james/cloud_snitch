@@ -1,0 +1,6 @@
+---
+- hosts: all
+  tasks:
+    - name: Get information on all dpkg managed packages
+      pkg_snitch:
+      register: result

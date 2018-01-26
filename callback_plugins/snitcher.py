@@ -43,6 +43,9 @@ class CallbackModule(CallbackBase):
 
         Using this to figure out when a playbook is done.
         """
+        # Do not write if empty
+        if not self._data:
+            return
         outfile_name = datetime.datetime.utcnow().isoformat()
         outfile_dir = os.environ.get('CLOUD_SNITCH_DIR', '')
         if outfile_dir:

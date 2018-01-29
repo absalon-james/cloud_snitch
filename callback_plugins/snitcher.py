@@ -19,7 +19,10 @@ import os
 
 from ansible.plugins.callback import CallbackBase
 
-TARGET_DOCTYPES = ['dpkg_list']
+TARGET_DOCTYPES = [
+    'dpkg_list',
+    'hostvars'
+]
 
 
 class CallbackModule(CallbackBase):

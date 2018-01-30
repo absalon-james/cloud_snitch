@@ -92,12 +92,10 @@ class ActionModule(ActionBase):
             outfile_name = os.path.join(outfile_dir, outfile_name)
 
         # Dump var data
-        #with open(outfile_name, 'w') as f:
         data = task_vars['hostvars'].get(hostname)
         data = copy.deepcopy(data)
         data = self.filter_by_prefix(data)
         data = self.filter_by_paths(data)
-        # f.write(json.dumps(data))
         return data
 
     def run(self, tmp=None, task_vars=None):

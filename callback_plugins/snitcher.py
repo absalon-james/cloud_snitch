@@ -14,6 +14,7 @@ DOCUMENTATION = '''
 '''
 
 import datetime
+import hashlib
 import json
 import os
 
@@ -37,32 +38,61 @@ class CallbackModule(CallbackBase):
         else:
             self.disabled = True
 
-    def playbook_on_start(self):
-        """Reset data."""
-        self._data = {}
+    def md5_from_string(self, s):
+        """Get md5 hex digest from string.
 
-    def playbook_on_stats(self, stats):
-        """Dump collected data to a file.
-
-        Using this to figure out when a playbook is done.
+        :param s: Source string
+        :type s: str
+        :returns: md5 hex digest
+        :rtype: str
         """
-        # Do not write if empty
-        if not self._data:
-            return
-        outfile_name = datetime.datetime.utcnow().isoformat()
-        outfile_dir = os.environ.get('CLOUD_SNITCH_DIR', '')
-        if outfile_dir:
-            outfile_name = os.path.join(outfile_dir, outfile_name)
-        with open(outfile_name, 'w') as f:
-            f.write(json.dumps(self._data))
+        m = hashlib.md5()
+        m.update(s)
+        return m.hexdigest()
+
+    def md5_from_file(self, name):
+        """Get md5 from file from previous run.
+
+        :param name: Name of the file containing the md5 hexdigest
+        :type name: str
+        :returns: Md5 hexdigest stored in file
+        :rtype: str|None
+        """
+        try:
+            with open(name, 'r') as f:
+                m = f.read()
+        except IOError:
+            return None
+        return m
 
     def runner_on_ok(self, host, result):
         """Runs on every task completion.
 
-        Save data for the run so far.
+        Handles data emissions from task completions.
+
+        :param host: Host name
+        :type host: str
+        :param result: Result from task
+        :type result: dict
         """
         doctype = result.get('doctype')
         if not doctype in TARGET_DOCTYPES:
             return
-        docdict = self._data.setdefault(doctype, {})
-        hostdict = docdict.setdefault(host, result)
+
+        outfile_name = '{}_{}.json'.format(doctype, host)
+        checksum_name = '{}_{}.md5'.format(doctype, host)
+        outfile_dir = os.environ.get('CLOUD_SNITCH_DIR', '')
+        if outfile_dir:
+            outfile_name = os.path.join(outfile_dir, outfile_name)
+            checksum_name = os.path.join(outfile_dir, checksum_name)
+
+        existing_checksum = self.md5_from_file(checksum_name)
+
+        json_result = json.dumps(result)
+        json_checksum = self.md5_from_string(json_result)
+
+        if existing_checksum != json_checksum:
+            with open(outfile_name, 'w') as f:
+                f.write(json_result)
+            with open(checksum_name, 'w') as f:
+                f.write(json_checksum)

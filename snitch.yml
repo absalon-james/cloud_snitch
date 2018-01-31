@@ -6,5 +6,10 @@
 
 - hosts: all
   tasks:
+    - name: Get information on all python packages
+      pip_snitch:
+
+- hosts: all
+  tasks:
     - name: Get host vars data
       action: var_snitch

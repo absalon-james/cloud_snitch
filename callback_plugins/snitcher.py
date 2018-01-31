@@ -22,7 +22,8 @@ from ansible.plugins.callback import CallbackBase
 
 TARGET_DOCTYPES = [
     'dpkg_list',
-    'hostvars'
+    'hostvars',
+    'pip_list'
 ]
 
 

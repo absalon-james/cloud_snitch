@@ -190,25 +190,11 @@ def run_module():
     except subprocess.CalledProcessError as e:
         venv_out = e.output
 
-    # try
-    pips = parse_pips(venv_out)
-    result['payload'] = pips_freeze(pips)
-    #except:
-    #    module.fail_json(msg="Unable to collect python pkg information.")
-
-    #try:
-    #    dpkg_out = subprocess.check_output(CMD)
-    #    result['payload'] = parse_out(dpkg_out)
-    #except subprocess.CalledProcessError:
-    #    module.fail_json(
-    #        msg="Unable to run {}".format(' '.join(CMD)),
-    #        **result
-    #    )
-    #except Exception:
-    #    module.fail_json(
-    #        msg="Something unexpected occurred.",
-    #        **result
-    #    )
+    try
+        pips = parse_pips(venv_out)
+        result['payload'] = pips_freeze(pips)
+    except:
+        module.fail_json(msg="Unable to collect python pkg information.")
 
     # This module will allways be read only
     #if module.params['new']:

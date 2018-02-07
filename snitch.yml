@@ -13,3 +13,8 @@
   tasks:
     - name: Get host vars data
       action: var_snitch
+
+- hosts: all
+  tasks:
+    - name: Collect config files
+      file_snitch:

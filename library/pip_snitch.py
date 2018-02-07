@@ -190,7 +190,7 @@ def run_module():
     except subprocess.CalledProcessError as e:
         venv_out = e.output
 
-    try
+    try:
         pips = parse_pips(venv_out)
         result['payload'] = pips_freeze(pips)
     except:

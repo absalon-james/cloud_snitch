@@ -145,7 +145,8 @@ TARGET_DOCTYPES = [
     'dpkg_list',
     'hostvars',
     'pip_list',
-    'file_dict'
+    'file_dict',
+    'gitrepos'
 ]
 
 _file_handler = FileHandler()
@@ -154,6 +155,7 @@ DOCTYPE_HANDLERS = {
     'dpkg_list': _file_handler,
     'hostvars': _file_handler,
     'pip_list': _file_handler,
+    'gitrepos': _file_handler,
     'file_dict': ConfigFileHandler()
 }
 

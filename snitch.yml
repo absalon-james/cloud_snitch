@@ -18,3 +18,8 @@
   tasks:
     - name: Collect config files
       file_snitch:
+
+- hosts: all[0]
+  tasks:
+    - name: Get repo information
+      action: git_snitch

@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+import glob
+from ansible.module_utils.basic import AnsibleModule
+
 DOCUMENTATION = '''
 ---
 module: file_snitch
@@ -19,9 +22,6 @@ author:
     - James Absalon
 '''
 
-EXAMPLES = '''
-'''
-
 RETURN = '''
 payload:
     description: |
@@ -32,8 +32,6 @@ doctype:
     description: Type of document. Will always be 'file_dict'
     type: str
 '''
-import glob
-from ansible.module_utils.basic import AnsibleModule
 
 _FILE_TARGETS = [
     '/etc/aide/aide.conf.d/ZZ_aide_exclusions',
@@ -234,7 +232,7 @@ _FILE_TARGETS = [
     '/etc/systemd/system/neutron-*.service',
     '/etc/systemd/system/nova-*.service',
     '/etc/systemd/system/rabbitmq-server.service.d/limits.conf',
-    '/etc/systemd/system/rabbitmq-server.service.d/systemd-restart-on-failure.conf',
+    '/etc/systemd/system/rabbitmq-server.service.d/systemd-restart-on-failure.conf',  # noqa: E501
     '/etc/systemd/system/sahara-*.service',
     '/etc/systemd/system/swift-*.service',
     '/etc/tmpfiles.d//gnocchi-*.conf',
@@ -253,8 +251,8 @@ _FILE_TARGETS = [
     '/lib/systemd/system/git.socket',
     '/lib/systemd/system/git@.service',
     '/openstack/venvs/horizon-*/bin/horizon-manage.py',
-    '/openstack/venvs/horizon-*/lib/python2.7/dist-packages/openstack_dashboard/local/enabled/_80_admin_default_panel.py',
-    '/openstack/venvs/horizon-*/lib/python2.7/dist-packages/openstack_dashboard/wsgi/django.wsgi',
+    '/openstack/venvs/horizon-*/lib/python2.7/dist-packages/openstack_dashboard/local/enabled/_80_admin_default_panel.py',  # noqa: E501
+    '/openstack/venvs/horizon-*/lib/python2.7/dist-packages/openstack_dashboard/wsgi/django.wsgi',  # noqa: E501
     '/openstack/venvs/tempest-*/etc/tempest.conf',
     '/opt/container-setup.sh',
     '/opt/keystone-credential-rotate.sh',
@@ -305,68 +303,34 @@ def get_file(filename):
     # @TODO - Mask secure content
     return contents
 
+
 def run_module():
-    # define the available arguments/parameters that a user can pass to
-    # the module
     module_args = dict()
 
-    # seed the result dict in the object
-    # we primarily care about changed and state
-    # change is if this module effectively modified the target
-    # state will include any data that you want your module to pass back
-    # for consumption, for example, in a subsequent task
     result = dict(
         changed=False,
         payload={},
         doctype='file_dict'
     )
 
-    # the AnsibleModule object will be our abstraction working with Ansible
-    # this includes instantiation, a couple of common attr would be the
-    # args/params passed to the execution, as well as if the module
-    # supports check mode
     module = AnsibleModule(
         argument_spec=module_args,
         supports_check_mode=True
     )
 
-    # if the user is working with this module in only check mode we do not
-    # want to make any changes to the environment, just return the current
-    # state with no modifications
-
-    # This module is read only.
-    #if module.check_mode:
-    #    return result
-
-    # manipulate or modify the state as needed (this is going to be the
-    # part where your module will do what it needs to do)
-
-    # Build list of matched files by iterating over targets
     filenames = []
     for t in _FILE_TARGETS:
         filenames += glob.glob(t)
 
     for filename in filenames:
-        contents = get_file(filename)
         result['payload'][filename] = get_file(filename)
 
-    # This module will allways be read only
-    #if module.params['new']:
-    #    result['changed'] = True
-
-    # during the execution of the module, if there is an exception or a
-    # conditional state that effectively causes a failure, run
-    # AnsibleModule.fail_json() to pass in the message and the result
-    # @TODO - Check Failing
-    #if module.params['name'] == 'fail me':
-    #    module.fail_json(msg='You requested this to fail', **result)
-
-    # in the event of a successful module execution, you will want to
-    # simple AnsibleModule.exit_json(), passing the key/value results
     module.exit_json(**result)
+
 
 def main():
     run_module()
+
 
 if __name__ == '__main__':
     main()

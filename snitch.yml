@@ -3,23 +3,33 @@
   tasks:
     - name: Get information on all dpkg managed packages
       pkg_snitch:
+      tags:
+        - pkg
 
 - hosts: all
   tasks:
     - name: Get information on all python packages
       pip_snitch:
+      tags:
+        - pip
 
 - hosts: all
   tasks:
     - name: Get host vars data
       action: var_snitch
+      tags:
+        - vars
 
 - hosts: all
   tasks:
     - name: Collect config files
       file_snitch:
+      tags:
+        - config
 
 - hosts: all[0]
   tasks:
     - name: Get repo information
       action: git_snitch
+      tags:
+        - git

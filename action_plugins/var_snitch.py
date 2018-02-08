@@ -2,8 +2,6 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import copy
-import json
-import pprint
 import os
 from ansible.plugins.action import ActionBase
 

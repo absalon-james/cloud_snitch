@@ -1,6 +1,12 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import hashlib
+import json
+import os
+
+from ansible.plugins.callback import CallbackBase
+
 DOCUMENTATION = '''
     callback: snitcher
     short_description: Gathers output from cloud snitch modules
@@ -12,13 +18,6 @@ DOCUMENTATION = '''
     type: ?
     requirements:
 '''
-
-import datetime
-import hashlib
-import json
-import os
-
-from ansible.plugins.callback import CallbackBase
 
 
 class FileHandler:
@@ -88,6 +87,7 @@ class FileHandler:
             with open(outmd5_name, 'w') as f:
                 f.write(json_checksum)
 
+
 class ConfigFileHandler(FileHandler):
 
     def __init__(self):
@@ -140,7 +140,6 @@ class ConfigFileHandler(FileHandler):
             self._handle_file(host, filename, contents)
 
 
-
 TARGET_DOCTYPES = [
     'dpkg_list',
     'hostvars',
@@ -183,7 +182,7 @@ class CallbackModule(CallbackBase):
         :type result: dict
         """
         doctype = result.get('doctype')
-        if not doctype in TARGET_DOCTYPES:
+        if doctype not in TARGET_DOCTYPES:
             return
         handler = DOCTYPE_HANDLERS.get(doctype, FileHandler())
         handler.handle(doctype, host, result)

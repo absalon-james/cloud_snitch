@@ -32,7 +32,9 @@ class ActionModule(ActionBase):
         for repo_path in repo_path_list:
             try:
                 repos.append((repo_path, git.Repo(repo_path)))
-            except NoSuchPathError, InvalidGitRepositoryError:
+            except NoSuchPathError:
+                pass
+            except InvalidGitRepositoryError:
                 pass
         return repos
 
@@ -64,7 +66,8 @@ class ActionModule(ActionBase):
         ref_map = {str(r.commit): r for r in repo.refs}
         for commit in repo.iter_commits('HEAD'):
             ref = ref_map.get(str(commit))
-            if ref and any([isinstance(ref, t) for t in _MERGE_BASE_REF_TYPES]):
+            types = [isinstance(ref, t) for t in _MERGE_BASE_REF_TYPES]
+            if ref and any(types):
                 return ref
         return None
 
@@ -87,13 +90,19 @@ class ActionModule(ActionBase):
 
             # Build Merge base dictionary
             merge_base_ref = self.get_merge_base_ref(repo)
-            marge_base_dict = None
+            merge_base_dict = None
             if merge_base_ref:
-                merge_base_diff = repo.commit().diff(merge_base_ref.commit, create_patch=True)
+                merge_base_diff = repo.commit().diff(
+                    merge_base_ref.commit,
+                    create_patch=True
+                )
                 merge_base_dict = dict(
                     name=str(merge_base_ref),
                     diff=[str(d) for d in merge_base_diff]
                 )
+
+            # Get working tree differences.
+            index_diff = repo.index.diff(None, create_patch=True)
 
             # Build rest of repo information
             repo_dict = dict(
@@ -106,7 +115,7 @@ class ActionModule(ActionBase):
                 working_tree=dict(
                     is_dirty=repo.is_dirty(),
                     untracked_files=repo.untracked_files,
-                    diff=[str(d) for d in repo.index.diff(None, create_patch=True)]
+                    diff=[str(d) for d in index_diff]
                 )
             )
             results.append(repo_dict)

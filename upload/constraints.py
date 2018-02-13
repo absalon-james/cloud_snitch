@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 _UNIQUE_CONSTRAINTS_MAP = {
     'Envionment': 'account_number_name',
     'Host': 'hostname',
-    'Pythonpackage': 'name_version'
+    'Pythonpackage': 'name_version',
+    'Virtualenv': 'path_host',
+    'PythonPackage': 'name_version'
 }
 
 

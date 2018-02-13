@@ -1,5 +1,4 @@
 import logging
-import pprint
 import utils
 
 logger = logging.getLogger(__name__)
@@ -36,6 +35,9 @@ class VersionedEntity(object):
     # Properties we do need to version
     state_properties = []
 
+    # Properties that are concatenations of other properties
+    concat_properties = {}
+
     def __init__(self, **kwargs):
         """Init the versioned entity instance.
 
@@ -45,6 +47,12 @@ class VersionedEntity(object):
         props.append(self.identity_property)
         for prop in props:
             setattr(self, prop, kwargs.get(prop))
+
+        for prop, cat_list in self.concat_properties.items():
+            if not kwargs.get(prop):
+                logger.debug([kwargs.get(p, '') for p in cat_list])
+                val = '-'.join([str(kwargs.get(p)) for p in cat_list])
+                setattr(self, prop, val)
 
     @property
     def identity(self):
@@ -79,7 +87,7 @@ class VersionedEntity(object):
 
         # Single returns a single itemed list.
         record = record[0]
-        return cls(**({k: v for k,v in record.items()}))
+        return cls(**({k: v for k, v in record.items()}))
 
     def _prop_clause(self, props):
         """Return info helpful to building property clauses.
@@ -200,8 +208,6 @@ class VersionedEntity(object):
             logger.debug('Update state cypher:')
             logger.debug(cypher)
             resp = tx.run(cypher, **prop_map)
-        else:
-            logger.debug('Data is not dirty')
 
     def create(self, tx):
         """Create the entity.
@@ -238,14 +244,133 @@ class VersionedEntity(object):
         # Create state node next
         self._create_state(tx)
 
-    def update(self, session):
-        with session.begin_transaction() as tx:
-            exists = self.find(tx, self.identity)
-            if exists is None:
-                logger.debug("{} does not exist. creating ...".format(self.label))
-                record = self.create(tx)
-            else:
-                self._update_state(tx)
+    def update(self, tx):
+        exists = self.find(tx, self.identity)
+        if exists is None:
+            logger.debug("{} does not exist. creating ...".format(self.label))
+            record = self.create(tx)
+        else:
+            self._update_state(tx)
+
+
+class VersionedEdgeSet(object):
+
+    def __init__(self, name, source, dest_type):
+        self.name = name
+        self.source = source
+        self.dest_type = dest_type
+
+
+    def update(self, tx, edges):
+        """Update the versioned edge set
+
+        First match all edges from source to dest_type entities that
+        are current(the `to` field is set to end of time).
+
+        Determine the edges that are no longer current and mark them with
+        a `to` set to now
+
+        Create the edges that need to be added.
+        """
+        now = utils.milliseconds_now()
+        new_edges = set([e.identity for e in edges])
+
+        # Match existing edges
+        cypher = """\
+            MATCH (s:{} {{ {}:$identity }})-[r:{} {{to:$time}}]->(d:{})
+            RETURN d.{}
+        """
+        cypher = cypher.format(
+            self.source.label,
+            self.source.identity_property,
+            self.name,
+            self.dest_type.label,
+            self.dest_type.identity_property
+        )
+        logger.debug("Finding current edges:")
+        logger.debug(cypher)
+        resp = tx.run(
+            cypher,
+            identity=self.source.identity,
+            time=utils.EOT
+        )
+
+        logger.debug("New edges: {}".format(new_edges))
+
+        current_edges = set()
+        key = 'd.{}'.format(self.dest_type.identity_property)
+        for record in resp:
+            current_edges.add(record[key])
+
+        logger.debug("Current edges: {}".format(current_edges))
+
+        # Set `to` on edges that are no longer current
+        old_edges = current_edges - new_edges
+        logger.debug("Old edges: {}".format(old_edges))
+
+        for old_identity in old_edges:
+            cypher = """
+                MATCH (s:{} {{ {}:$srcIdentity}})
+                MATCH (d:{} {{ {}:$destIdentity}})
+                MATCH (s)-[r:{} {{ to: $eot }}]->(d)
+                SET r.to = $to
+            """
+            cypher = cypher.format(
+                self.source.label,
+                self.source.identity_property,
+                self.dest_type.label,
+                self.dest_type.identity_property,
+                self.name
+            )
+            logger.debug("Marking {} --> {} as old".format(self.source.identity, old_identity))
+            logger.debug(cypher)
+            tx.run(
+                cypher,
+                srcIdentity=self.source.identity,
+                destIdentity=old_identity,
+                eot=utils.EOT,
+                to=now
+            )
+
+        # Merge in new edges
+        add_edges = new_edges - current_edges
+        for add_identity in add_edges:
+            cypher = """
+                MATCH (s:{} {{ {}:$srcIdentity }})
+                MATCH (d:{} {{ {}:$destIdentity }})
+                MERGE (s)-[r:{} {{ to: $to }}]->(d)
+                ON CREATE SET r.from = $frm
+            """
+            cypher = cypher.format(
+                self.source.label,
+                self.source.identity_property,
+                self.dest_type.label,
+                self.dest_type.identity_property,
+                self.name
+            )
+            logger.debug("Creating edge {} --> {}:".format(self.source.identity, add_identity))
+            logger.debug(cypher)
+            tx.run(
+                cypher,
+                srcIdentity=self.source.identity,
+                destIdentity=add_identity,
+                frm=now,
+                to=utils.EOT
+            )
+
+
+class EnvironmentEntity(VersionedEntity):
+
+    label = 'Environment'
+    state_label = 'EnvironmentState'
+    identity_property = 'account_number_name'
+    static_properties = ['account_number', 'name']
+    concat_properties = {
+        'account_number_name': [
+            'account_number',
+            'name'
+        ]
+    }
 
 
 class HostEntity(VersionedEntity):
@@ -253,12 +378,36 @@ class HostEntity(VersionedEntity):
     label = 'Host'
     state_label = 'HostState'
     identity_property = 'hostname'
-    static_properties = ['created_at']
-    state_properties = ['num_cores']
 
     def __str__(self):
-        return '{} - {} - {} cores'.format(
-            getattr(self, 'hostname', None),
-            getattr(self, 'created_at', None),
-            getattr(self, 'num_cores', None)
-        )
+        return '{}'.format(getattr(self, 'hostname', None))
+
+
+class VirtualenvEntity(VersionedEntity):
+
+    label = 'Virtualenv'
+    state_label = 'VirtualenvState'
+    identity_property = 'path_host'
+    static_properties = [
+        'path',
+        'host'
+    ]
+    concat_properties = {
+        'path_host': [
+            'path',
+            'host'
+        ]
+    }
+
+class PythonPackageEntity(VersionedEntity):
+
+    label = 'PythonPackage'
+    state_label = 'PythonPackageState'
+    identity_property = 'name_version'
+    static_properties = ['name', 'version']
+    concat_properties = {
+        'name_version': [
+            'name',
+            'version'
+        ]
+    }

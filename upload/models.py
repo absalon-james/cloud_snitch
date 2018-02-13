@@ -127,7 +127,9 @@ class VersionedEntity(object):
         })
         cyper = """\
             MATCH (s:{} {{ {}:$identity }})
-            CREATE (s)-[:HAS_STATE {{to: $state_rel_to, from: $state_rel_from }}]->(newState:{} {{ {} }})
+            CREATE (s)
+                -[:HAS_STATE {{to: $state_rel_to, from: $state_rel_from }}]
+                ->(newState:{} {{ {} }})
             RETURN newState
         """
         cypher = cyper.format(
@@ -142,7 +144,6 @@ class VersionedEntity(object):
         if resp.single() is None:
             raise Exception('Unable to create new state')
 
-
     def _update_state(self, tx):
         """Close current state and create a new state if data differs.
 
@@ -156,7 +157,9 @@ class VersionedEntity(object):
 
         # Match current state
         cypher = """\
-            MATCH (a:{} {{ {}: $identity}})-[r:HAS_STATE {{to: $state_rel_to}}]->(currentState:{})
+            MATCH (a:{} {{ {}: $identity}})
+                -[r:HAS_STATE {{to: $state_rel_to}}]
+                ->(currentState:{})
             RETURN currentState
         """
         cypher = cypher.format(
@@ -189,11 +192,15 @@ class VersionedEntity(object):
                 'identity': self.identity
             })
             cyper = """\
-                MATCH (c:{} {{ {}:$identity }})-[r1:HAS_STATE {{to: $EOT}}]->(currentState:{})
+                MATCH (c:{} {{ {}:$identity }})
+                    -[r1:HAS_STATE {{to: $EOT}}]
+                    ->(currentState:{})
                 SET r1.to = $now
                 WITH r1
                 MATCH (s:{} {{ {}:$identity }})
-                CREATE (s)-[r2:HAS_STATE {{to: $EOT, from: $now }}]->(newState:{} {{ {} }})
+                CREATE (s)
+                    -[r2:HAS_STATE {{to: $EOT, from: $now }}]
+                    ->(newState:{} {{ {} }})
                 RETURN newState
             """
             cypher = cyper.format(
@@ -248,7 +255,7 @@ class VersionedEntity(object):
         exists = self.find(tx, self.identity)
         if exists is None:
             logger.debug("{} does not exist. creating ...".format(self.label))
-            record = self.create(tx)
+            self.create(tx)
         else:
             self._update_state(tx)
 
@@ -256,10 +263,18 @@ class VersionedEntity(object):
 class VersionedEdgeSet(object):
 
     def __init__(self, name, source, dest_type):
+        """Init the versioned edge set
+
+        :param name: Name of the relation ship. example: HAS_HOST
+        :type name: str
+        :param source: Source Object. All edges in the set start here
+        :type source: VersionedEntity
+        :param dest_type: Type of the end of the the edges in the set
+        :type dest_type: class
+        """
         self.name = name
         self.source = source
         self.dest_type = dest_type
-
 
     def update(self, tx, edges):
         """Update the versioned edge set
@@ -322,7 +337,10 @@ class VersionedEdgeSet(object):
                 self.dest_type.identity_property,
                 self.name
             )
-            logger.debug("Marking {} --> {} as old".format(self.source.identity, old_identity))
+            logger.debug("Marking {} --> {} as old".format(
+                self.source.identity,
+                old_identity)
+            )
             logger.debug(cypher)
             tx.run(
                 cypher,
@@ -348,7 +366,10 @@ class VersionedEdgeSet(object):
                 self.dest_type.identity_property,
                 self.name
             )
-            logger.debug("Creating edge {} --> {}:".format(self.source.identity, add_identity))
+            logger.debug("Creating edge {} --> {}:".format(
+                self.source.identity,
+                add_identity)
+            )
             logger.debug(cypher)
             tx.run(
                 cypher,
@@ -360,6 +381,7 @@ class VersionedEdgeSet(object):
 
 
 class EnvironmentEntity(VersionedEntity):
+    """Model environment nodes in the graph."""
 
     label = 'Environment'
     state_label = 'EnvironmentState'
@@ -374,6 +396,7 @@ class EnvironmentEntity(VersionedEntity):
 
 
 class HostEntity(VersionedEntity):
+    """Model host nodes in the graph."""
 
     label = 'Host'
     state_label = 'HostState'
@@ -384,6 +407,7 @@ class HostEntity(VersionedEntity):
 
 
 class VirtualenvEntity(VersionedEntity):
+    """Model virtualenv nodes in the graph."""
 
     label = 'Virtualenv'
     state_label = 'VirtualenvState'
@@ -399,7 +423,9 @@ class VirtualenvEntity(VersionedEntity):
         ]
     }
 
+
 class PythonPackageEntity(VersionedEntity):
+    """Model pythonpackage nodes in the graph."""
 
     label = 'PythonPackage'
     state_label = 'PythonPackageState'

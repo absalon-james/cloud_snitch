@@ -1,7 +1,4 @@
 import logging
-import os
-import pprint
-import re
 import settings
 
 from neo4j.v1 import GraphDatabase

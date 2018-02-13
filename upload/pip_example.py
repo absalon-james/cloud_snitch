@@ -1,11 +1,8 @@
-import datetime
 import json
 import logging
 import os
-import pprint
 import re
 import settings
-import utils
 
 from neo4j.v1 import GraphDatabase
 
@@ -20,7 +17,15 @@ DATA_DIR = os.environ.get('CLOUD_SNITCH_DIR')
 
 
 def create_environment(session):
-    """Create the environment from settings."""
+    """Create the environment from settings.
+
+    Creates the environment in graph.
+
+    :param session: Neo4j driver session.
+    :type session: neo4j.v1.session.BoltSession
+    :returns: Environment object
+    :rtype: HostEntity
+    """
     env = Environment(
         account_number=settings.ENVIRONMENT['account_number'],
         name=settings.ENVIRONMENT['name']
@@ -31,14 +36,28 @@ def create_environment(session):
 
 
 def create_python_packages(session, virtualenv, data_list):
+    """Save python package information to neo4j.
 
+    Updates pythonpackage entities in graph.
+    Updates edges from virtualenv -> each pythonpackage
+
+    :param session: neo4j driver session
+    :type session: neo4j.v1.session.BoltSession
+    :param virtualenv: Virtualenv object
+    :type virtualenv: Virtualenv
+    :param data_list: List of python package names and versions
+    :type data_list: dict
+    """
     python_packages = []
     for data in data_list:
         python_package = PythonPackage(
             name=data['name'],
             version=data['version']
         )
-        logger.debug("Found python package {}".format(python_package.name_version))
+        logger.debug(
+            "Found python package {}"
+            .format(python_package.name_version)
+        )
         with session.begin_transaction() as tx:
             python_package.update(tx)
         python_packages.append(python_package)
@@ -49,6 +68,18 @@ def create_python_packages(session, virtualenv, data_list):
 
 
 def create_virtualenvs(session, host, filename):
+    """Create virtualenvs and host -> virtualenv relationship.
+
+    Creates virtualenvs in graph.
+    Creates set of edges from host to all virtualenvs.
+
+    :param session: neo4j driver session.
+    :type session: neo4j.v1.session.BoltSession
+    :param host: Host object
+    :type host: Host
+    :param filename: Name of the file containing data.
+    :type filename: str
+    """
     virtualenvs = []
     filename = os.path.join(DATA_DIR, filename)
     with open(filename, 'r') as f:
@@ -67,7 +98,16 @@ def create_virtualenvs(session, host, filename):
 
 
 def create_hosts(session, env):
-    """Create hosts and environment->host relationship."""
+    """Create hosts and environment->host relationship.
+
+    Creates hosts in graph.
+    Creates set of edges from env->all hosts
+
+    :param session: neo4j driver session
+    :type session: neo4j.v1.session.BoltSession
+    :param env: Environment object.
+    :type env: Environment.
+    """
     pippattern = '^pip_list_(?P<hostname>.*).json$'
     exp = re.compile(pippattern)
 
@@ -96,6 +136,7 @@ if __name__ == '__main__':
     )
 
     with driver.session() as session:
+        logger.debug("Type of session: {}".format(type(session)))
         env = create_environment(session)
         create_hosts(session, env)
     driver.close()

@@ -50,7 +50,6 @@ class VersionedEntity(object):
 
         for prop, cat_list in self.concat_properties.items():
             if not kwargs.get(prop):
-                logger.debug([kwargs.get(p, '') for p in cat_list])
                 val = '-'.join([str(kwargs.get(p)) for p in cat_list])
                 setattr(self, prop, val)
 
@@ -121,42 +120,6 @@ class VersionedEntity(object):
                 prop_map[prop] = val
         parts = ', '.join(parts)
         return parts, prop_map
-
-    def _create_state(self, tx):
-        """Create a new state with state properties.
-
-        :param tx: neo4j transaction context.
-        :type tx: neo4j.v1.api.Transaction
-        """
-        # Create state
-        if not self.state_properties:
-            return
-        parts, prop_map = self._prop_clause(self.state_properties)
-
-        # Create relationship
-        prop_map.update({
-            'state_rel_to': utils.EOT,
-            'state_rel_from': utils.milliseconds_now(),
-            'identity': self.identity
-        })
-        cyper = """\
-            MATCH (s:{} {{ {}:$identity }})
-            CREATE (s)
-                -[:HAS_STATE {{to: $state_rel_to, from: $state_rel_from }}]
-                ->(newState:{} {{ {} }})
-            RETURN newState
-        """
-        cypher = cyper.format(
-            self.label,
-            self.identity_property,
-            self.state_label,
-            parts
-        )
-        logger.debug("Create state cypher:")
-        logger.debug(cypher)
-        resp = tx.run(cypher, **prop_map)
-        if resp.single() is None:
-            raise Exception('Unable to create new state')
 
     def _update_state(self, tx):
         """Close current state and create a new state if data differs.
@@ -230,41 +193,6 @@ class VersionedEntity(object):
             logger.debug(cypher)
             resp = tx.run(cypher, **prop_map)
 
-    def create(self, tx):
-        """Create the entity.
-
-        Create entity with static properties set
-        Create entity state with  state properties.
-
-        @TODO - Check for errors on create
-
-        :param tx: neo4j transaction context.
-        :type tx: neo4j.v1.api.Transaction
-
-        """
-        # Create identity node first
-        props = self.static_properties + [self.identity_property]
-
-        prop_parts = []
-        prop_map = {}
-        for prop in props:
-            val = getattr(self, prop, None)
-            if val is not None:
-                prop_parts.append('{}: ${}'.format(prop, prop))
-                prop_map[prop] = val
-
-        prop_parts = ', '.join(prop_parts)
-        cypher = 'create (n:{} {{ {} }}) RETURN (n)'.format(
-            self.label,
-            prop_parts
-        )
-        resp = tx.run(cypher, **prop_map)
-        if resp.single() is None:
-            raise Exception('Unable to complete create of identity node.')
-
-        # Create state node next
-        self._create_state(tx)
-
     def update(self, tx):
         """Update the entity in the graph.
 
@@ -280,18 +208,28 @@ class VersionedEntity(object):
 
         parts, prop_map = self._props_set_clause('n', self.static_properties)
 
+        if prop_map:
+            create_clause = (
+                'ON CREATE SET  n.created_at = timestamp(), {}'.format(parts)
+            )
+            update_clause = 'ON MATCH SET {}'.format(parts)
+        else:
+            create_clause = 'ON CREATE SET  n.created_at = timestamp()'
+            update_clause = ''
+
         cypher = """
             MERGE (n:{} {{ {}:$identity }})
-            ON CREATE SET  n.created_at = timestamp(), {}
-            ON MATCH SET {}
+            {}
+            {}
             RETURN n
         """
         cypher = cypher.format(
             self.label,
             self.identity_property,
-            parts,
-            parts
+            create_clause,
+            update_clause
         )
+        logger.debug("Cypher to update state:\n{}".format(cypher))
         resp = tx.run(cypher, identity=self.identity, **prop_map)
         self._update_state(tx)
 

@@ -2,15 +2,14 @@ import json
 import logging
 import os
 import re
-import settings
 
+from cloud_snitch import settings
+from cloud_snitch.models import EnvironmentEntity as Environment
+from cloud_snitch.models import HostEntity as Host
+from cloud_snitch.models import PythonPackageEntity as PythonPackage
+from cloud_snitch.models import VersionedEdgeSet as VersionedEdges
+from cloud_snitch.models import VirtualenvEntity as Virtualenv
 from neo4j.v1 import GraphDatabase
-
-from models import EnvironmentEntity as Environment
-from models import HostEntity as Host
-from models import PythonPackageEntity as PythonPackage
-from models import VersionedEdgeSet as VersionedEdges
-from models import VirtualenvEntity as Virtualenv
 
 logger = logging.getLogger(__name__)
 DATA_DIR = os.environ.get('CLOUD_SNITCH_DIR')

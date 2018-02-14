@@ -31,7 +31,7 @@ def create_environment(session):
         name=settings.ENVIRONMENT['name']
     )
     with session.begin_transaction() as tx:
-        env.update(tx)
+        env.touch(tx)
     return env
 
 
@@ -119,7 +119,7 @@ def create_hosts(session, env):
             host = Host(hostname=hostname)
             logger.debug('Found host: {}'.format(hostname))
             with session.begin_transaction() as tx:
-                host.update(tx)
+                host.touch(tx)
 
             create_virtualenvs(session, host, f)
             hosts.append(Host(hostname=r.group('hostname')))
@@ -136,7 +136,6 @@ if __name__ == '__main__':
     )
 
     with driver.session() as session:
-        logger.debug("Type of session: {}".format(type(session)))
         env = create_environment(session)
         create_hosts(session, env)
     driver.close()

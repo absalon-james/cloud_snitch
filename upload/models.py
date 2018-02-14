@@ -108,6 +108,20 @@ class VersionedEntity(object):
         parts = ', '.join(parts)
         return parts, prop_map
 
+    def _props_set_clause(self, node_variable, props):
+        """Build clause for setting properties."""
+
+        parts = []
+        part_fmt = '{}.{} = ${}'
+        prop_map = {}
+        for prop in props:
+            val = getattr(self, prop, None)
+            if val is not None:
+                parts.append(part_fmt.format(node_variable, prop, prop))
+                prop_map[prop] = val
+        parts = ', '.join(parts)
+        return parts, prop_map
+
     def _create_state(self, tx):
         """Create a new state with state properties.
 
@@ -252,12 +266,52 @@ class VersionedEntity(object):
         self._create_state(tx)
 
     def update(self, tx):
-        exists = self.find(tx, self.identity)
-        if exists is None:
-            logger.debug("{} does not exist. creating ...".format(self.label))
-            self.create(tx)
-        else:
-            self._update_state(tx)
+        """Update the entity in the graph.
+
+        :param tx: neo4j transaction context
+        :type tx: neo4j.v1.api.Transaction
+        """
+
+        static_props = {}
+        for prop in self.static_properties:
+            val = getattr(self, prop, None)
+            if val is not None:
+                static_props[prop] = val
+
+        parts, prop_map = self._props_set_clause('n', self.static_properties)
+
+        cypher = """
+            MERGE (n:{} {{ {}:$identity }})
+            ON CREATE SET  n.created_at = timestamp(), {}
+            ON MATCH SET {}
+            RETURN n
+        """
+        cypher = cypher.format(
+            self.label,
+            self.identity_property,
+            parts,
+            parts
+        )
+        resp = tx.run(cypher, identity=self.identity, **prop_map)
+        self._update_state(tx)
+
+    def touch(self, tx):
+        """Ensures an identity node exists without worrying about state.
+
+        :param tx: neo4j transaction context
+        :type tx: neo4j.v1.api.Transaction
+        """
+        cypher = """
+            MERGE (n:{} {{ {}:$identity }})
+            ON CREATE SET n.created_at = timestamp()
+            RETURN n
+        """
+        cypher = cypher.format(
+            self.label,
+            self.identity_property,
+        )
+        logger.debug("Performing a touch:\n{}".format(cypher))
+        resp = tx.run(cypher, identity=self.identity)
 
 
 class VersionedEdgeSet(object):

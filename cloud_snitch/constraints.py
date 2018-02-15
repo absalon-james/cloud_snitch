@@ -1,6 +1,6 @@
 import logging
-import settings
 
+from cloud_snitch import settings
 from neo4j.v1 import GraphDatabase
 
 logger = logging.getLogger(__name__)
@@ -8,6 +8,11 @@ logger = logging.getLogger(__name__)
 _UNIQUE_CONSTRAINTS_MAP = {
     'Envionment': 'account_number_name',
     'Host': 'hostname',
+    'Mount': 'mount_host',
+    'Interface': 'device_host',
+    'Device': 'name_host',
+    'Partition': 'name_device',
+    'NameServer': 'ip',
     'Pythonpackage': 'name_version',
     'Virtualenv': 'path_host',
     'PythonPackage': 'name_version',

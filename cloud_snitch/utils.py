@@ -36,3 +36,27 @@ def utcdatetime(milliseconds):
     """
     dt = datetime.datetime.fromtimestamp(milliseconds / 1e3, pytz.UTC)
     return dt
+
+
+def complex_get(complexkey, data, default=None, keydelimiter=':'):
+    """Get a value from a dict via a complex key.
+
+    A complex key is a key where a delimiter within the key
+    indicates a path through a nested dict structure.
+
+    :param complexkey: Complex key to find a value for.
+    :type complexkey: str
+    :param data: Data to search
+    :type data: dict
+    :param keydelimiter: Delimiter to indicate a path
+    :type keydelimiter: str
+    :returns: Returns the value if it exists or default otherwise.
+    :rtype: object|type(default)
+    """
+    keys = complexkey.split(keydelimiter)
+    for key in keys:
+        if isinstance(data, dict):
+            data = data.get(key, default)
+        else:
+            return default
+    return data

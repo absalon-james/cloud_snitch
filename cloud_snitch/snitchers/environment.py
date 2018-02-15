@@ -4,7 +4,6 @@ from base import BaseSnitcher
 from cloud_snitch import settings
 from cloud_snitch.models import EnvironmentEntity
 
-
 logger = logging.getLogger(__name__)
 
 

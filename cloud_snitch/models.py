@@ -1,4 +1,5 @@
 import logging
+import pprint
 import utils
 
 logger = logging.getLogger(__name__)
@@ -161,19 +162,27 @@ class VersionedEntity(object):
             logger.debug("Data is dirty, making a new state.")
             now = utils.milliseconds_now()
 
+            # Mark current state as old
+            cypher = """
+                MATCH (c:{} {{ {}:$identity }})
+                   -[r1:HAS_STATE {{to: $EOT}}]
+                   ->(currentState:{})
+                SET r1.to = $now
+            """
+            cypher = cypher.format(
+                self.label,
+                self.identity_property,
+                self.state_label
+            )
+            tx.run(cypher, identity=self.identity, now=now, EOT=utils.EOT)
+
             # Create relationship
             prop_map.update({
                 'EOT': utils.EOT,
                 'now': now,
-                'state_rel_to': utils.EOT,
                 'identity': self.identity
             })
-            cyper = """\
-                MATCH (c:{} {{ {}:$identity }})
-                    -[r1:HAS_STATE {{to: $EOT}}]
-                    ->(currentState:{})
-                SET r1.to = $now
-                WITH r1
+            cyper = """
                 MATCH (s:{} {{ {}:$identity }})
                 CREATE (s)
                     -[r2:HAS_STATE {{to: $EOT, from: $now }}]
@@ -184,13 +193,11 @@ class VersionedEntity(object):
                 self.label,
                 self.identity_property,
                 self.state_label,
-                self.label,
-                self.identity_property,
-                self.state_label,
                 parts
             )
             logger.debug('Update state cypher:')
             logger.debug(cypher)
+            logger.debug("With params:\n{}".format(pprint.pformat(prop_map)))
             resp = tx.run(cypher, **prop_map)
 
     def update(self, tx):
@@ -229,8 +236,8 @@ class VersionedEntity(object):
             create_clause,
             update_clause
         )
-        logger.debug("Cypher to update state:\n{}".format(cypher))
         resp = tx.run(cypher, identity=self.identity, **prop_map)
+        logger.debug(resp)
         self._update_state(tx)
 
     def touch(self, tx):
@@ -248,8 +255,8 @@ class VersionedEntity(object):
             self.label,
             self.identity_property,
         )
-        logger.debug("Performing a touch:\n{}".format(cypher))
         resp = tx.run(cypher, identity=self.identity)
+        logger.debug(resp)
 
 
 class VersionedEdgeSet(object):
@@ -416,6 +423,24 @@ class VirtualenvEntity(VersionedEntity):
     }
 
 
+class AptPackageEntity(VersionedEntity):
+    """Model apt package nodes in the graph."""
+
+    label = 'AptPackage'
+    state_label = 'AptPackageState'
+    identity_property = 'name_version'
+    static_properties = [
+        'name',
+        'version'
+    ]
+    concat_properties = {
+        'name_version': [
+            'name',
+            'version'
+        ]
+    }
+
+
 class PythonPackageEntity(VersionedEntity):
     """Model pythonpackage nodes in the graph."""
 
@@ -429,3 +454,64 @@ class PythonPackageEntity(VersionedEntity):
             'version'
         ]
     }
+
+
+class GitRepoEntity(VersionedEntity):
+    """Models a git repo."""
+
+    label = 'GitRepo'
+    state_label = 'GitRepoState'
+    identity_property = 'path_environment'
+    static_properties = [
+        'path',
+        'environment'
+    ]
+    state_properties = [
+        'active_branch_name',
+        'head_sha',
+        'is_detached',
+        'working_tree_dirty',
+        'working_tree_diff_md5',
+        'merge_base_name',
+        'merge_base_diff_md5'
+    ]
+    concat_properties = {
+        'path_environment': [
+            'path',
+            'environment'
+        ]
+    }
+
+
+class GitRemoteEntity(VersionedEntity):
+    """Models a git repo remote."""
+
+    label = 'GitRemote'
+    state_label = 'GitRemoteState'
+    identity_property = 'name_repo'
+    static_properties = [
+        'name',
+        'repo'
+    ]
+    concat_properties = {
+        'name_repo': [
+            'name',
+            'repo'
+        ]
+    }
+
+
+class GitUntrackedFileEntity(VersionedEntity):
+    """Models an untracked file in a gitrepo."""
+
+    label = 'GitUntrackedFile'
+    state_label = 'GitUntrackedFile'
+    identity_property = 'path'
+
+
+class GitUrlEntity(VersionedEntity):
+    """Models a git repo url."""
+
+    label = 'GitUrl'
+    state_label = 'GitUrlState'
+    identity_property = 'url'

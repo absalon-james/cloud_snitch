@@ -88,6 +88,43 @@ class FileHandler:
                 f.write(json_checksum)
 
 
+class GitFileHandler(FileHandler):
+
+    filename_prefix = 'gitrepos'
+
+    def handle(self, doctype, host, result):
+        """Handles a gitrepo file.
+
+        Should only be called on one host. The execution will happen
+        on the deployment host.
+
+        Stored files will be:
+            gitrepos.json, gitrepos.md5
+
+        :param doctype: Type of document
+        :type doctype: str
+        :param host: Unused
+        :type host: str
+        :param result: Result of task|action
+        :type result: dict
+        """
+        outfile_name = '{}.json'.format(self.filename_prefix)
+        outmd5_name = '{}.md5'.format(self.filename_prefix)
+        outfile_name = os.path.join(self.basedir, outfile_name)
+        outmd5_name = os.path.join(self.basedir, outmd5_name)
+
+        # Get existing checksum
+        existing_checksum = self.md5_from_file(outmd5_name)
+        json_result = json.dumps(result.get('payload', {}))
+        json_checksum = self.md5_from_string(json_result)
+
+        # Write only if change detected
+        if existing_checksum != json_checksum:
+            with open(outfile_name, 'w') as f:
+                f.write(json_result)
+            with open(outmd5_name, 'w') as f:
+                f.write(json_checksum)
+
 class ConfigFileHandler(FileHandler):
 
     def __init__(self):
@@ -154,7 +191,7 @@ DOCTYPE_HANDLERS = {
     'dpkg_list': _file_handler,
     'hostvars': _file_handler,
     'pip_list': _file_handler,
-    'gitrepos': _file_handler,
+    'gitrepos': GitFileHandler(),
     'file_dict': ConfigFileHandler()
 }
 

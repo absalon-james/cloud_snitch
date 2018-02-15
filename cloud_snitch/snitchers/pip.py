@@ -2,12 +2,10 @@ import json
 import logging
 
 from base import BaseSnitcher
-from cloud_snitch import settings
 from cloud_snitch.models import HostEntity
 from cloud_snitch.models import PythonPackageEntity
 from cloud_snitch.models import VersionedEdgeSet
 from cloud_snitch.models import VirtualenvEntity
-
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +54,11 @@ class PipSnitcher(BaseSnitcher):
         with session.begin_transaction() as tx:
             virtualenv.update(tx)
         for pkgdict in pkglist:
-            pkgs.append(self._update_python_package(session, virtualenv, pkgdict))
+            pkgs.append(self._update_python_package(
+                session,
+                virtualenv,
+                pkgdict)
+            )
 
         edges = VersionedEdgeSet(
             'HAS_PYTHON_PACKAGE',
@@ -89,7 +91,12 @@ class PipSnitcher(BaseSnitcher):
                 pipdict = json.loads(f.read())
 
             for path, pkglist in pipdict.items():
-                virtualenv = self._update_virtualenv(session, host, path, pkglist)
+                virtualenv = self._update_virtualenv(
+                    session,
+                    host,
+                    path,
+                    pkglist
+                )
                 virtualenvs.append(virtualenv)
 
             edges = VersionedEdgeSet('HAS_VIRTUALENV', host, VirtualenvEntity)

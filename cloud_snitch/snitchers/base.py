@@ -26,7 +26,9 @@ class BaseSnitcher(object):
             r = exp.search(f)
             if r:
                 hostname = r.group('hostname')
-                host_tuples.append((hostname, os.path.join(settings.DATA_DIR, f)))
+                host_tuples.append(
+                    (hostname, os.path.join(settings.DATA_DIR, f))
+                )
 
         return host_tuples
 

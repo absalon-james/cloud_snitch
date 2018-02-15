@@ -10,7 +10,12 @@ _UNIQUE_CONSTRAINTS_MAP = {
     'Host': 'hostname',
     'Pythonpackage': 'name_version',
     'Virtualenv': 'path_host',
-    'PythonPackage': 'name_version'
+    'PythonPackage': 'name_version',
+    'AptPackage': 'name_version',
+    'GitRepo': 'path_environment',
+    'GitRemote': 'name_repo',
+    'GitUntrackedFile': 'path',
+    'GitUrl': 'url'
 }
 
 

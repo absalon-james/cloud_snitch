@@ -1,9 +1,14 @@
 #!/usr/bin/python
 
 import os
+import re
 import subprocess
 
 from ansible.module_utils.basic import AnsibleModule
+
+PIP_LIST_PATTERN = re.compile(
+    '^(?P<name>.*) \((?P<version>[^ ,]*)(, (?P<path>.*)){0,1}\)$'
+)
 
 DOCUMENTATION = '''
 ---
@@ -15,8 +20,8 @@ version_added: "2.1.6"
 
 description:
     - "Identifies virtual environments on host"
-    - "Executes a pip freeze in each virtual environment"
-    - "Parses pip freeze output"
+    - "Executes a pip list in each virtual environment"
+    - "Parses pip list output"
 
 extends_documentation_fragment:
     - azure
@@ -75,31 +80,36 @@ def parse_pips(data):
     return result
 
 
-def parse_freeze(freeze_output):
-    """Parse pip freeze ouput into list of dicts.
+def parse_list(list_output):
+    """Parse pip list ouput into list of dicts.
 
-    Expects freeze output to be in a format similar to:
-    pkg1==version1
-    pkg2==version2
+    Expects list output to be in a format similar to:
+    pkg1 (version1)
+    pkg2 (version2, path)
     ...
-    pkgN==versionN
+    pkgN (versionN)
 
-    :param freeze_output: Output from pip freeze command.
-    :type freeze_output: str
+    :param list_output: Output from pip list command.
+    :type list_output: str
     :returns: List of python package dicts containing name and version.
     :rtype: list
     """
+
     pip_list = []
-    for line in freeze_output.split('\n'):
-        if not line:
+    for line in list_output.split('\n'):
+        match = PIP_LIST_PATTERN.search(line)
+        if match is None:
             continue
-        name, version = line.split('==')
-        pip_list.append(dict(name=name, version=version))
+        pip_list.append(dict(
+            name=match.group('name'),
+            version=match.group('version'),
+            path=match.group('path')
+        ))
     return pip_list
 
 
-def pip_freeze(pip_path):
-    """Parse output of pip freeze from pip at pip_path
+def pip_list(pip_path):
+    """Parse output of pip list from pip at pip_path
 
     :param pip_path: Location of pip within virtualenv
     :type pip_path: str
@@ -119,7 +129,7 @@ def pip_freeze(pip_path):
     # Try all paths stopping when one works
     for path in [pip_path, local_pip_path]:
         try:
-            output = subprocess.check_output([path, 'freeze'])
+            output = subprocess.check_output([path, 'list'])
         except OSError:
             # Path not found
             continue
@@ -130,11 +140,11 @@ def pip_freeze(pip_path):
         return []
 
     # Returned parsed data
-    return parse_freeze(output)
+    return parse_list(output)
 
 
-def pips_freeze(pip_paths):
-    """Run pip freeze on each pip path
+def pips_list(pip_paths):
+    """Run pip list on each pip path
 
     :param pip_paths: List of pip paths
     :type pip_paths: list
@@ -144,7 +154,7 @@ def pips_freeze(pip_paths):
     pip_dict = {}
     for pip_path in pip_paths:
         virtualenv = pip_path.rsplit(os.path.sep, 2)[0]
-        pip_dict[virtualenv] = pip_freeze(pip_path)
+        pip_dict[virtualenv] = pip_list(pip_path)
     return pip_dict
 
 
@@ -170,7 +180,7 @@ def run_module():
 
     try:
         pips = parse_pips(venv_out)
-        result['payload'] = pips_freeze(pips)
+        result['payload'] = pips_list(pips)
     except Exception:
         module.fail_json(msg="Unable to collect python pkg information.")
 

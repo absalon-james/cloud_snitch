@@ -13,6 +13,7 @@ from git.refs.tag import TagReference
 # @TODO - Make this configurable
 _REPO_LIST = [
     '/opt/openstack-ansible',
+    '/opt/rpc-maas'
 ]
 
 _MERGE_BASE_REF_TYPES = [RemoteReference, TagReference]

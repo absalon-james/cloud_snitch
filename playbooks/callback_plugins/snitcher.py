@@ -88,18 +88,18 @@ class FileHandler:
                 f.write(json_checksum)
 
 
-class GitFileHandler(FileHandler):
+class SingleFileHandler(FileHandler):
 
-    filename_prefix = 'gitrepos'
+    filename_prefix = 'single'
 
     def handle(self, doctype, host, result):
-        """Handles a gitrepo file.
+        """Handles a a single file output from a snitch.
 
         Should only be called on one host. The execution will happen
         on the deployment host.
 
         Stored files will be:
-            gitrepos.json, gitrepos.md5
+            <filename_prefix>.json, <filename_prefix>.md5
 
         :param doctype: Type of document
         :type doctype: str
@@ -124,6 +124,15 @@ class GitFileHandler(FileHandler):
                 f.write(json_result)
             with open(outmd5_name, 'w') as f:
                 f.write(json_checksum)
+
+
+class GitFileHandler(SingleFileHandler):
+    filename_prefix = 'gitrepos'
+
+
+class UservarsHandler(SingleFileHandler):
+    filename_prefix = 'uservars'
+
 
 class ConfigFileHandler(FileHandler):
 
@@ -179,19 +188,21 @@ class ConfigFileHandler(FileHandler):
 
 TARGET_DOCTYPES = [
     'dpkg_list',
-    'hostvars',
+    'facts',
     'pip_list',
     'file_dict',
-    'gitrepos'
+    'gitrepos',
+    'uservars'
 ]
 
 _file_handler = FileHandler()
 
 DOCTYPE_HANDLERS = {
     'dpkg_list': _file_handler,
-    'hostvars': _file_handler,
+    'facts': _file_handler,
     'pip_list': _file_handler,
     'gitrepos': GitFileHandler(),
+    'uservars': UservarsHandler(),
     'file_dict': ConfigFileHandler()
 }
 

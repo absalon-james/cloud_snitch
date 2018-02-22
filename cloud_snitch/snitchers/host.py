@@ -78,7 +78,7 @@ _INTERFACE_KEY_MAP = {
 class HostSnitcher(BaseSnitcher):
     """Models path to update graph entities for an environment."""
 
-    file_pattern = '^hostvars_(?P<hostname>.*).json$'
+    file_pattern = '^facts_(?P<hostname>.*).json$'
 
     def _update_interfaces(self, session, host, ansibledict):
         """Update host interfaces in graph.

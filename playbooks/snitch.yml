@@ -16,9 +16,9 @@
 - hosts: all
   tasks:
     - name: Get host vars data
-      action: var_snitch
+      action: fact_snitch
       tags:
-        - vars
+        - facts
 
 - hosts: all
   tasks:
@@ -33,3 +33,10 @@
       action: git_snitch
       tags:
         - git
+
+- hosts: all[0]
+  tasks:
+    - name: Get user vars
+      action: uservars_snitch
+      tags:
+        - uservars

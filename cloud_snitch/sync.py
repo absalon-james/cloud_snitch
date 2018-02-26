@@ -8,6 +8,7 @@ import logging
 from cloud_snitch import settings
 from neo4j.v1 import GraphDatabase
 from snitchers.apt import AptSnitcher
+from snitchers.configfile import ConfigfileSnitcher
 from snitchers.environment import EnvironmentSnitcher
 from snitchers.git import GitSnitcher
 from snitchers.host import HostSnitcher
@@ -27,6 +28,7 @@ def main():
         EnvironmentSnitcher(),
         GitSnitcher(),
         HostSnitcher(),
+        ConfigfileSnitcher(),
         PipSnitcher(),
         AptSnitcher(),
         UservarsSnitcher()

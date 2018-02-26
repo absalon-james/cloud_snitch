@@ -1,6 +1,8 @@
 #!/usr/bin/python
 
 import glob
+import re
+import StringIO
 from ansible.module_utils.basic import AnsibleModule
 
 DOCUMENTATION = '''
@@ -290,6 +292,70 @@ _FILE_TARGETS = [
 ]
 
 
+EASY_FLAGS = [
+    'token',
+    'key',
+    'password',
+    'pass',
+    'pwd',
+    'passwd',
+    'passwrd',
+    'secret'
+]
+
+left = '^(?P<left>[^:=]*\w+)'
+op = '(?P<op>(\s*)(=|:)(\s*))'
+
+EASY_ASSIGNMENT_EXP = re.compile('{}{}(?P<right>.+)$'.format(
+    left,
+    op
+))
+
+right = '(?P<protouser>[\w\+]+://[\w]+:)(?P<password>[\w]+)(?P<rest>@.*)'
+URL_EXP = re.compile('{}{}{}'.format(left, op, right))
+
+
+def redact(part):
+    """Redacts a part of information.
+
+    :param part: Part of a string to redact
+    :type part: str
+    :returns: Redacted string
+    :rtype: str
+    """
+    return '*' * 8
+
+
+def mask_line(line):
+    """Make best guess at censoring sensitive information.
+
+    :param line: Line to mask
+    :type line: str
+    :returns: Censored line,
+    :rtype: str
+    """
+    # Check for match on an assignment operation
+    match = EASY_ASSIGNMENT_EXP.search(line)
+    if match:
+        left = match.group('left').lower()
+        if any([left.endswith(flag) for flag in EASY_FLAGS]):
+            return "{}{}{}".format(
+                match.group('left'),
+                match.group('op'),
+                redact(match.group('right')) + '\n'
+            )
+    match = URL_EXP.search(line)
+    if match:
+        return '{}{}{}{}{}'.format(
+            match.group('left'),
+            match.group('op'),
+            match.group('protouser'),
+            redact(match.group('password')),
+            match.group('rest') + '\n'
+        )
+    return line
+
+
 def get_file(filename):
     """Get contents of a file.
 
@@ -299,9 +365,10 @@ def get_file(filename):
     :rtype: str
     """
     with open(filename, 'r') as f:
-        contents = f.read()
-    # @TODO - Mask secure content
-    return contents
+        s = StringIO.StringIO()
+        for line in f.readlines():
+            s.write(mask_line(line))
+        return s.getvalue()
 
 
 def run_module():

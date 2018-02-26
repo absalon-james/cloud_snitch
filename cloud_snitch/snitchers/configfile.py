@@ -1,0 +1,116 @@
+import logging
+import os
+import re
+
+from base import BaseSnitcher
+from cloud_snitch import settings
+from cloud_snitch.models import ConfigfileEntity
+from cloud_snitch.models import HostEntity
+from cloud_snitch.models import VersionedEdgeSet
+
+logger = logging.getLogger(__name__)
+
+
+class ConfigfileSnitcher(BaseSnitcher):
+    """Models path host -> configfile"""
+
+    dir_pattern = '^config_(?P<hostname>.*)$'
+
+    def _find_host_dir_tuples(self, pattern):
+        """Iterates over data dir looking for matching directories.
+
+        :param pattern: Pattern to search for
+        :type pattern: str
+        :returns: List of tuples of (hostname, dirname)
+        :rtype: list
+        """
+        host_tuples = []
+        exp = re.compile(pattern)
+
+        for f_or_d in os.listdir(settings.DATA_DIR):
+            r = exp.search(f_or_d)
+            full = os.path.join(settings.DATA_DIR, f_or_d)
+            if r and os.path.isdir(full):
+                host_tuples.append((r.group('hostname'), full))
+
+        return host_tuples
+
+    def _find_files(self, dirname):
+        """Find all config files starting at dirname.
+
+        :param dirname: Path of target directory
+        :type dirname: str
+        :yields: Filename relative to host
+        :ytype: str
+        """
+        for dirpath, _, filenames in os.walk(dirname):
+            for filename in filenames:
+                if not filename.endswith('.md5'):
+                    fullname = os.path.join(dirpath, filename)
+                    _, childname = fullname.split(dirname)
+                    yield (os.path.join(dirpath, childname))
+
+    def _update_host(self, session, hostname, dirname):
+        """Update configuration files for a host.
+
+        :param session: neo4j driver session
+        :type session: neo4j.v1.session.BoltSession
+        :param hostname: Name of the host
+        :type hostname: str
+        :param dirname: Name of directory
+        :type dirname: str
+        """
+        # Find parent host object - return early if not exists.
+        with session.begin_transaction() as tx:
+            host = HostEntity.find(tx, hostname)
+        if host is None:
+            logger.warning('Unable to locate host {}'.format(hostname))
+            return
+
+        # Iterate over configration files in the host's directory
+        configfiles = []
+        for filename in self._find_files(dirname):
+
+            # Read content of file and md5
+            fullpath = os.path.join(dirname, filename[1:])
+            fullpath_md5 = fullpath + '.md5'
+            _, name = os.path.split(fullpath)
+            try:
+                with open(fullpath, 'r') as f:
+                    contents = f.read()
+
+                with open(fullpath_md5, 'r') as f:
+                    md5 = f.read()
+            except IOError:
+                logger.warning(
+                    'Unable to gather config file information for {}.'
+                    .format(fullpath)
+                )
+
+            # Update configfile node
+            configfile = ConfigfileEntity(
+                path=filename,
+                host=host.identity,
+                md5=md5,
+                contents=contents,
+                name=name
+            )
+            with session.begin_transaction() as tx:
+                configfile.update(tx)
+
+            configfiles.append(configfile)
+
+        # Update host -> configfile relationships.
+        edges = VersionedEdgeSet('HAS_CONFIG_FILE', host, ConfigfileEntity)
+        with session.begin_transaction() as tx:
+            edges.update(tx, configfiles)
+
+    def _snitch(self, session):
+        """Update the apt part of the graph..
+
+        :param session: neo4j driver session
+        :type session: neo4j.v1.session.BoltSession
+        """
+        for hostname, dirname in self._find_host_dir_tuples(self.dir_pattern):
+            logger.debug("Found {}".format(hostname))
+            self._update_host(session, hostname, dirname)

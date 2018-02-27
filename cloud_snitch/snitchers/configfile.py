@@ -6,7 +6,6 @@ from base import BaseSnitcher
 from cloud_snitch import settings
 from cloud_snitch.models import ConfigfileEntity
 from cloud_snitch.models import HostEntity
-from cloud_snitch.models import VersionedEdgeSet
 
 logger = logging.getLogger(__name__)
 
@@ -61,8 +60,7 @@ class ConfigfileSnitcher(BaseSnitcher):
         :type dirname: str
         """
         # Find parent host object - return early if not exists.
-        with session.begin_transaction() as tx:
-            host = HostEntity.find(tx, hostname)
+        host = HostEntity.find(session, hostname)
         if host is None:
             logger.warning('Unable to locate host {}'.format(hostname))
             return
@@ -95,15 +93,11 @@ class ConfigfileSnitcher(BaseSnitcher):
                 contents=contents,
                 name=name
             )
-            with session.begin_transaction() as tx:
-                configfile.update(tx)
-
+            configfile.update(session)
             configfiles.append(configfile)
 
         # Update host -> configfile relationships.
-        edges = VersionedEdgeSet('HAS_CONFIG_FILE', host, ConfigfileEntity)
-        with session.begin_transaction() as tx:
-            edges.update(tx, configfiles)
+        host.configfiles.update(session, configfiles)
 
     def _snitch(self, session):
         """Update the apt part of the graph..

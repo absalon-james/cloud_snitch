@@ -6,7 +6,6 @@ from base import BaseSnitcher
 from cloud_snitch import settings
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import UservarEntity
-from cloud_snitch.models import VersionedEdgeSet
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +29,17 @@ class UservarsSnitcher(BaseSnitcher):
             return
 
         # Try to find the parent environment.
-        with session.begin_transaction() as tx:
-            env = EnvironmentEntity(
-                account_number=settings.ENVIRONMENT.get('account_number'),
-                name=settings.ENVIRONMENT.get('name')
+        env = EnvironmentEntity(
+            account_number=settings.ENVIRONMENT.get('account_number'),
+            name=settings.ENVIRONMENT.get('name')
+        )
+        identity = env.identity
+        env = EnvironmentEntity.find(session, identity)
+        if env is None:
+            logger.warning(
+                'Unable to locate environment {}.'.format(identity)
             )
-            identity = env.identity
-            env = EnvironmentEntity.find(tx, identity)
-            if env is None:
-                logger.warning(
-                    'Unable to locate environment {}.'.format(identity)
-                )
-                return
+            return
 
         # Iterate over each uservariable
         uservars = []
@@ -55,11 +53,8 @@ class UservarsSnitcher(BaseSnitcher):
                 name=key,
                 value=val
             )
-            with session.begin_transaction() as tx:
-                uservar.update(tx)
-                uservars.append(uservar)
+            uservar.update(session)
+            uservars.append(uservar)
 
         # Update edges
-        edges = VersionedEdgeSet('HAS_USERVAR', env, UservarEntity)
-        with session.begin_transaction() as tx:
-            edges.update(tx, uservars)
+        env.uservars.update(session, uservars)

@@ -10,7 +10,6 @@ from cloud_snitch.models import InterfaceEntity
 from cloud_snitch.models import MountEntity
 from cloud_snitch.models import NameServerEntity
 from cloud_snitch.models import PartitionEntity
-from cloud_snitch.models import VersionedEdgeSet
 from cloud_snitch.utils import complex_get
 
 logger = logging.getLogger(__name__)
@@ -111,15 +110,9 @@ class HostSnitcher(BaseSnitcher):
                     interfacekwargs[interface_key] = val
 
             interface = InterfaceEntity(**interfacekwargs)
-            with session.begin_transaction() as tx:
-                interface.update(tx)
-
+            interface.update(session)
             interfaces.append(interface)
-
-        if interfaces:
-            edges = VersionedEdgeSet('HAS_INTERFACE', host, InterfaceEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, interfaces)
+        host.interfaces.update(session, interfaces)
 
     def _update_partitions(self, session, device, devicedict):
         """Update partitions of a device
@@ -149,16 +142,11 @@ class HostSnitcher(BaseSnitcher):
 
             # Create the partition
             partition = PartitionEntity(**partitionkwargs)
-            with session.begin_transaction() as tx:
-                partition.update(tx)
-
+            partition.update(session)
             partitions.append(partition)
 
         # Update device -> partition edges.
-        if partitions:
-            edges = VersionedEdgeSet('HAS_PARTITION', device, PartitionEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, partitions)
+        device.partitions.update(session, partitions)
 
     def _update_devices(self, session, host, ansibledict):
         """Update devices for a host
@@ -187,18 +175,14 @@ class HostSnitcher(BaseSnitcher):
                     devicekwargs[device_key] = val
 
             device = DeviceEntity(**devicekwargs)
-            with session.begin_transaction() as tx:
-                device.update(tx)
+            device.update(session)
 
             self._update_partitions(session, device, devicedict)
 
             devices.append(device)
 
         # Update host -> device edges
-        if devices:
-            edges = VersionedEdgeSet('HAS_DEVICE', host, DeviceEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, devices)
+        host.devices.update(session, devices)
 
     def _update_mounts(self, session, host, ansibledict):
         """Update mounts for a host.
@@ -224,16 +208,11 @@ class HostSnitcher(BaseSnitcher):
                     mountkwargs[mount_key] = val
 
             mount = MountEntity(**mountkwargs)
-            with session.begin_transaction() as tx:
-                mount.update(tx)
-
+            mount.update(session)
             mounts.append(mount)
 
         # Update host -> mounts edges.
-        if mounts:
-            edges = VersionedEdgeSet('HAS_MOUNT', host, MountEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, mounts)
+        host.mounts.update(session, mounts)
 
     def _update_nameservers(self, session, host, ansibledict):
         """Update nameservers for a host.
@@ -255,15 +234,11 @@ class HostSnitcher(BaseSnitcher):
         nameservers = []
         for nameserver_item in nameserver_list:
             nameserver = NameServerEntity(ip=nameserver_item)
-            with session.begin_transaction() as tx:
-                nameserver.update(tx)
+            nameserver.update(session)
             nameservers.append(nameserver)
 
         # Update edges from host to nameservers.
-        if nameservers:
-            edges = VersionedEdgeSet('HAS_NAMESERVER', host, NameServerEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, nameservers)
+        host.nameservers.update(session, nameservers)
 
     def _host_from_tuple(self, session, host_tuple):
         """Load hostdata from json file and create HostEntity instance.
@@ -301,8 +276,7 @@ class HostSnitcher(BaseSnitcher):
                     hostkwargs[host_key] = val
 
         host = HostEntity(hostname=hostname, **hostkwargs)
-        with session.begin_transaction() as tx:
-            host.update(tx)
+        host.update(session)
 
         # Update nameservers subgraph
         self._update_nameservers(session, host, ansibledict)
@@ -340,6 +314,4 @@ class HostSnitcher(BaseSnitcher):
         )
 
         # Update edges from environment to each host.
-        edges = VersionedEdgeSet('HAS_HOST', env, HostEntity)
-        with session.begin_transaction() as tx:
-            edges.update(tx, hosts)
+        env.hosts.update(session, hosts)

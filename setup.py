@@ -9,6 +9,8 @@ setup(
     author_email="james.absalon@rackspace.com",
     packages=[
         'cloud_snitch',
+        'cloud_snitch.models',
+        'cloud_snitch.snitchers'
     ],
     package_data={'cloud_snitch': ['cloud_snitch/*']},
     long_description=description

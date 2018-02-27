@@ -4,7 +4,6 @@ import logging
 from base import BaseSnitcher
 from cloud_snitch.models import AptPackageEntity
 from cloud_snitch.models import HostEntity
-from cloud_snitch.models import VersionedEdgeSet
 
 logger = logging.getLogger(__name__)
 
@@ -34,12 +33,7 @@ class AptSnitcher(BaseSnitcher):
             name=pkgdict.get('name'),
             version=pkgdict.get('version')
         )
-        logger.debug(
-            "Update apt package with name: {} and version: {} from {}"
-            .format(aptpkg.name, aptpkg.version, pkgdict)
-        )
-        with session.begin_transaction() as tx:
-            aptpkg.update(tx)
+        aptpkg.update(session)
         return aptpkg
 
     def _snitch(self, session):
@@ -52,13 +46,12 @@ class AptSnitcher(BaseSnitcher):
             aptpkgs = []
 
             # Find host in graph, continue if host not found.
-            with session.begin_transaction() as tx:
-                host = HostEntity.find(tx, hostname)
-                if host is None:
-                    logger.warning(
-                        'Unable to locate host entity {}'.format(hostname)
-                    )
-                    continue
+            host = HostEntity.find(session, hostname)
+            if host is None:
+                logger.warning(
+                    'Unable to locate host entity {}'.format(hostname)
+                )
+                continue
 
             # Read data from file
             with open(filename, 'r') as f:
@@ -69,7 +62,4 @@ class AptSnitcher(BaseSnitcher):
                 aptpkg = self._update_apt_package(session, aptdict)
                 if aptpkg is not None:
                     aptpkgs.append(aptpkg)
-
-            edges = VersionedEdgeSet('HAS_APT_PACKAGE', host, AptPackageEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, aptpkgs)
+            host.aptpackages.update(session, aptpkgs)

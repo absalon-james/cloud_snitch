@@ -4,7 +4,6 @@ import logging
 from base import BaseSnitcher
 from cloud_snitch.models import HostEntity
 from cloud_snitch.models import PythonPackageEntity
-from cloud_snitch.models import VersionedEdgeSet
 from cloud_snitch.models import VirtualenvEntity
 
 logger = logging.getLogger(__name__)
@@ -31,8 +30,7 @@ class PipSnitcher(BaseSnitcher):
             name=pkg.get('name'),
             version=pkg.get('version')
         )
-        with session.begin_transaction() as tx:
-            pythonpkg.update(tx)
+        pythonpkg.update(session)
         return pythonpkg
 
     def _update_virtualenv(self, session, host, path, pkglist):
@@ -51,23 +49,14 @@ class PipSnitcher(BaseSnitcher):
         """
         virtualenv = VirtualenvEntity(host=host.hostname, path=path)
         pkgs = []
-        with session.begin_transaction() as tx:
-            virtualenv.update(tx)
+        virtualenv.update(session)
         for pkgdict in pkglist:
             pkgs.append(self._update_python_package(
                 session,
                 virtualenv,
                 pkgdict)
             )
-
-        edges = VersionedEdgeSet(
-            'HAS_PYTHON_PACKAGE',
-            virtualenv,
-            PythonPackageEntity
-        )
-        with session.begin_transaction() as tx:
-            edges.update(tx, pkgs)
-
+        virtualenv.pythonpackages.update(session, pkgs)
         return virtualenv
 
     def _snitch(self, session):
@@ -78,18 +67,15 @@ class PipSnitcher(BaseSnitcher):
         """
         for hostname, filename in self._find_host_tuples(self.file_pattern):
             virtualenvs = []
-
-            with session.begin_transaction() as tx:
-                host = HostEntity.find(tx, hostname)
-                if host is None:
-                    logger.warning(
-                        'Unable to locate host entity {}'.format(hostname)
-                    )
-                    continue
+            host = HostEntity.find(session, hostname)
+            if host is None:
+                logger.warning(
+                    'Unable to locate host entity {}'.format(hostname)
+                )
+                continue
 
             with open(filename, 'r') as f:
                 pipdict = json.loads(f.read())
-
             for path, pkglist in pipdict.items():
                 virtualenv = self._update_virtualenv(
                     session,
@@ -98,7 +84,4 @@ class PipSnitcher(BaseSnitcher):
                     pkglist
                 )
                 virtualenvs.append(virtualenv)
-
-            edges = VersionedEdgeSet('HAS_VIRTUALENV', host, VirtualenvEntity)
-            with session.begin_transaction() as tx:
-                edges.update(tx, virtualenvs)
+            host.virtualenvs.update(session, virtualenvs)

@@ -24,8 +24,7 @@ class EnvironmentSnitcher(BaseSnitcher):
             account_number=settings.ENVIRONMENT['account_number'],
             name=settings.ENVIRONMENT['name']
         )
-        with session.begin_transaction() as tx:
-            env.update(tx)
+        env.update(session)
         return env
 
     def _snitch(self, session):
@@ -34,4 +33,4 @@ class EnvironmentSnitcher(BaseSnitcher):
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
         """
-        self.update_environment(session)
+        self._update_environment(session)

@@ -5,8 +5,6 @@ Snitchers will also probably become python entry points.
 """
 import logging
 
-from cloud_snitch import settings
-from neo4j.v1 import GraphDatabase
 from snitchers.apt import AptSnitcher
 from snitchers.configfile import ConfigfileSnitcher
 from snitchers.environment import EnvironmentSnitcher
@@ -19,10 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    driver = GraphDatabase.driver(
-        settings.NEO4J_URI,
-        auth=(settings.NEO4J_USERNAME, settings.NEO4J_PASSWORD)
-    )
 
     snitchers = [
         EnvironmentSnitcher(),
@@ -34,7 +28,9 @@ def main():
         UservarsSnitcher()
     ]
 
-    with driver.session() as session:
-        for snitcher in snitchers:
-            snitcher.snitch(session)
-    driver.close()
+    for snitcher in snitchers:
+        snitcher.snitch()
+
+
+if __name__ == '__main__':
+    main()

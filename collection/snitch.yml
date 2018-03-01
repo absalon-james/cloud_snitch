@@ -23,18 +23,18 @@
 - hosts: all
   tasks:
     - name: Collect config files
-      file_snitch:
+      action: file_snitch
       tags:
         - config
 
-- hosts: all[0]
+- hosts: localhost
   tasks:
     - name: Get repo information
       action: git_snitch
       tags:
         - git
 
-- hosts: all[0]
+- hosts: localhost
   tasks:
     - name: Get user vars
       action: uservars_snitch

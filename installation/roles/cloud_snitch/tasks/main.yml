@@ -1,0 +1,30 @@
+---
+- name: Install GitPython into ansible runtime venv
+  pip:
+    name: "{{ git_python }}"
+    version: "{{ git_python_version }}"
+    extra_args: --isolated
+
+- name: Create Directories
+  file:
+    state: directory
+    path: "{{ item }}"
+  with_items:
+    - "{{ cloud_snitch_conf_dir }}"
+    - "{{ cloud_snitch_data_dir }}"
+  tags:
+    - config
+
+- name: Template settings.py
+  template:
+    src: cloud_snitch.yml.j2
+    dest: "{{ cloud_snitch_conf_file }}"
+  tags:
+    - config
+
+- name: Template cloud_snitch.rc
+  template:
+    src: cloud_snitch.rc.j2
+    dest: "{{ '~/.cloud_snitch.rc'|expanduser }}"
+  tags:
+    - config

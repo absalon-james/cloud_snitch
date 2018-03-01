@@ -3,6 +3,7 @@ __metaclass__ = type
 
 import git
 import os
+import yaml
 
 from ansible.plugins.action import ActionBase
 from git.exc import NoSuchPathError
@@ -10,13 +11,16 @@ from git.exc import InvalidGitRepositoryError
 from git.refs.remote import RemoteReference
 from git.refs.tag import TagReference
 
-# @TODO - Make this configurable
-_REPO_LIST = [
-    '/opt/openstack-ansible',
-    '/opt/rpc-maas'
-]
-
 _MERGE_BASE_REF_TYPES = [RemoteReference, TagReference]
+
+# Attempt to load configuration
+conf_file = os.environ.get(
+    'CLOUD_SNITCH_CONF_FILE',
+    '/etc/cloud_snitch/cloud_snitch.yml')
+with open(conf_file, 'r') as f:
+    settings = yaml.load(f.read())
+
+_REPO_LIST = settings.get('git_repo_list', [])
 
 
 class ActionModule(ActionBase):

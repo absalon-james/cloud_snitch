@@ -4,8 +4,16 @@ __metaclass__ = type
 import hashlib
 import json
 import os
+import yaml
 
 from ansible.plugins.callback import CallbackBase
+
+# Attempt to load configuration
+conf_file = os.environ.get(
+    'CLOUD_SNITCH_CONF_FILE',
+    '/etc/cloud_snitch/cloud_snitch.yml')
+with open(conf_file, 'r') as f:
+    settings = yaml.load(f.read())
 
 DOCUMENTATION = '''
     callback: snitcher
@@ -23,7 +31,9 @@ DOCUMENTATION = '''
 class FileHandler:
 
     def __init__(self):
-        self.basedir = os.environ.get('CLOUD_SNITCH_DIR', '')
+        self.basedir = settings.get('data_dir')
+        if self.basedir is None:
+            raise Exception("No data directory configured.")
 
     def md5_from_string(self, s):
         """Get md5 hex digest from string.

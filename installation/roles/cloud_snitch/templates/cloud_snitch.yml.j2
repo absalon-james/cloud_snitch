@@ -1,0 +1,31 @@
+---
+#{{ ansible_managed }}
+environment:
+  account_number: "{{ cloud_snitch_environment_account_number }}"
+  name: "{{ cloud_snitch_environment_name }}"
+
+log_format: "{{ cloud_snitch_log_format }}"
+log_level: "{{ cloud_snitch_log_level|upper }}"
+
+neo4j_log_level: "{{ cloud_snitch_neo4j_log_level|upper }}"
+
+# Neo4j connections
+neo4j:
+  username: "{{ cloud_snitch_neo4j_username }}"
+  password: "{{ cloud_snitch_neo4j_password }}"
+  uri: "{{ cloud_snitch_neo4j_uri }}"
+
+# Location to store local data
+data_dir: "{{ cloud_snitch_data_dir }}"
+
+# Git repo paths to watch
+git_repo_list:
+{% for repo in cloud_snitch_git_repo_list %}
+  - '{{ repo }}'
+{% endfor %}
+
+# Files to watch for file_snitch. May be globs
+file_snitch_list:
+{% for f in cloud_snitch_file_list %}
+  - '{{ f }}'
+{% endfor %}

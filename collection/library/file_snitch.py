@@ -372,7 +372,9 @@ def get_file(filename):
 
 
 def run_module():
-    module_args = dict()
+    module_args = dict(
+        file_list=dict(required=False, type='list'),
+    )
 
     result = dict(
         changed=False,
@@ -386,7 +388,7 @@ def run_module():
     )
 
     filenames = []
-    for t in _FILE_TARGETS:
+    for t in module.params.get('file_list', []):
         filenames += glob.glob(t)
 
     for filename in filenames:

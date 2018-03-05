@@ -1,6 +1,7 @@
 from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
+import datetime
 import hashlib
 import json
 import os
@@ -22,7 +23,7 @@ DOCUMENTATION = '''
     description:
       - This callback dumps apt_sniffer module results to a file
       - Environment Variable CLOUD_SNITCH_ENABLED
-      - Environment Variable CLOUD_SNITCH_DIR
+      - Environment Variable CLOUD_SNITCH_CONF_FILE
     type: ?
     requirements:
 '''
@@ -30,8 +31,13 @@ DOCUMENTATION = '''
 
 class FileHandler:
 
-    def __init__(self):
-        self.basedir = settings.get('data_dir')
+    def __init__(self, writedir):
+        """Init the file handler
+
+        :param writedir: Directory to write to
+        :type writedir: str
+        """
+        self.basedir = writedir
         if self.basedir is None:
             raise Exception("No data directory configured.")
 
@@ -146,8 +152,13 @@ class UservarsHandler(SingleFileHandler):
 
 class ConfigFileHandler(FileHandler):
 
-    def __init__(self):
-        super(ConfigFileHandler, self).__init__()
+    def __init__(self, writedir):
+        """Init the config file handler
+
+        :param writedir: Directory to write to
+        :type writedir: str
+        """
+        super(ConfigFileHandler, self).__init__(writedir)
 
     def _handle_file(self, host, filename, contents):
         """Handles a single config file.
@@ -205,15 +216,13 @@ TARGET_DOCTYPES = [
     'uservars'
 ]
 
-_file_handler = FileHandler()
-
 DOCTYPE_HANDLERS = {
-    'dpkg_list': _file_handler,
-    'facts': _file_handler,
-    'pip_list': _file_handler,
-    'gitrepos': GitFileHandler(),
-    'uservars': UservarsHandler(),
-    'file_dict': ConfigFileHandler()
+    'dpkg_list': FileHandler,
+    'facts': FileHandler,
+    'pip_list': FileHandler,
+    'gitrepos': GitFileHandler,
+    'uservars': UservarsHandler,
+    'file_dict': ConfigFileHandler
 }
 
 
@@ -221,11 +230,16 @@ class CallbackModule(CallbackBase):
     CALLBACK_VERSION = 2.0
     CALLBACK_NAME = 'snitcher'
 
+    TIME_FORMAT = '%Y-%m-%d_%H-%M-%S'
+
     def __init__(self, display=None):
         """Enables or disables plugin based on environment."""
         super(CallbackModule, self).__init__(display)
+        self.basedir = settings.get('data_dir')
         if os.environ.get('CLOUD_SNITCH_ENABLED', False):
             self.disabled = False
+            if not self.basedir:
+                raise Exception("No data directory configured.")
         else:
             self.disabled = True
 
@@ -242,5 +256,62 @@ class CallbackModule(CallbackBase):
         doctype = result.get('doctype')
         if doctype not in TARGET_DOCTYPES:
             return
-        handler = DOCTYPE_HANDLERS.get(doctype, FileHandler())
-        handler.handle(doctype, host, result)
+        handler = DOCTYPE_HANDLERS.get(doctype, FileHandler)
+        handler(self.dirpath).handle(doctype, host, result)
+
+    def _run_data_filename(self):
+        """Compute filename of run data.
+
+        :returns: Name of the file
+        :rtype: str
+        """
+        return os.path.join(self.dirpath, 'run_data.json')
+
+    def _write_run_data(self, data):
+        """Writes information about the run.
+
+        :param data: Data to save
+        :type data: dict
+        """
+        with open(self._run_data_filename(), 'w') as f:
+            f.write(json.dumps(data))
+
+    def _read_run_data(self):
+        """Read information about the run
+
+        :returns: Loaded data
+        :rtype: dict
+        """
+        with open(self._run_data_filename(), 'r') as f:
+            return json.loads(f.read())
+
+    def playbook_on_start(self):
+        """Start new directory."""
+        # Name the new directory following datetime
+        now = datetime.datetime.utcnow()
+        self.dirpath = os.path.join(
+            self.basedir,
+            now.strftime(self.TIME_FORMAT)
+        )
+
+        # Create the new directory
+        if not os.path.exists(self.dirpath):
+            os.makedirs(self.dirpath)
+
+        # Saved some stats
+        self._write_run_data({
+            'status': 'running',
+            'started': now.isoformat()
+        })
+
+    def playbook_on_stats(self, stats):
+        """Used as a on_playbook_end."""
+        now = datetime.datetime.utcnow()
+
+        # Get saved data
+        data = self._read_run_data()
+
+        # Update data and then save it
+        data['status'] = 'finished'
+        data['completed'] = now.isoformat()
+        self._write_run_data(data)

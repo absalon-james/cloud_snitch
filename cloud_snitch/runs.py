@@ -4,9 +4,13 @@ import logging
 import os
 
 from cloud_snitch import settings
+from cloud_snitch import utils
 from cloud_snitch.exc import InvalidCollectionError
 
 logger = logging.getLogger(__name__)
+
+
+_CURRENT_RUN = None
 
 
 class Run:
@@ -26,6 +30,21 @@ class Run:
         except ValueError:
             raise InvalidCollectionError(self.path)
 
+    @property
+    def completed(self):
+        """Get completed datetime
+
+        :returns: The completed datetime str
+        :rtype: str|None
+        """
+        if self._completed is None:
+            try:
+                raw = self.run_data.get('completed')
+                self._completed = utils.strtodatetime(raw)
+            except Exception:
+                self._completed = None
+        return self._completed
+
     def _save_data(self):
         """Save run data to disk"""
         with open(os.path.join(self.path, 'run_data.json'), 'w') as f:
@@ -41,6 +60,7 @@ class Run:
         """
         self.path = path
         self.run_data = self._read_data()
+        self._completed = None
 
     def is_valid(self):
         """Determine if the run is a valid sync target.
@@ -90,8 +110,36 @@ def find_runs():
         if os.path.isdir(os.path.join(settings.DATA_DIR, thing)):
             try:
                 run = Run(os.path.join(settings.DATA_DIR, thing))
-                if run.is_valid():
-                    runs.append(run)
+                runs.append(run)
             except InvalidCollectionError:
                 continue
+
+    # Sort runs be completed timestamp
+    runs = sorted(runs, lambda x, y: cmp(x.completed, y.completed))
     return runs
+
+
+def set_current(run):
+    """Set the current run
+
+    :param run: Run instance object
+    :type run: Run
+    """
+    global _CURRENT_RUN
+    _CURRENT_RUN = run
+
+
+def get_current():
+    """Get the current run
+
+    Used for context purposes.
+
+    :returns: Current run instance
+    :rtype: Run
+    """
+    return _CURRENT_RUN
+
+
+def unset_current():
+    """Unset the current run."""
+    set_current(None)

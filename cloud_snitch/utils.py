@@ -38,6 +38,20 @@ def utcdatetime(milliseconds):
     return dt
 
 
+def strtodatetime(isostr):
+    """Convert a utc isoformat datetime string into a datetime obj.
+
+    :param isostr: Isoformatted datetime str
+    :type isostr: str
+    :returns: Converted datetime object
+    :rtype datetime.datetime
+    """
+    left, dot, fraction = isostr.partition('.')
+    dt = datetime.datetime.strptime(left, "%Y-%m-%dT%H:%M:%S")
+    dt.replace(tzinfo=pytz.UTC)
+    return dt
+
+
 def complex_get(complexkey, data, default=None, keydelimiter=':'):
     """Get a value from a dict via a complex key.
 

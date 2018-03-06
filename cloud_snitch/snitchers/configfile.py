@@ -3,7 +3,6 @@ import os
 import re
 
 from base import BaseSnitcher
-from cloud_snitch import settings
 from cloud_snitch.models import ConfigfileEntity
 from cloud_snitch.models import HostEntity
 
@@ -23,12 +22,13 @@ class ConfigfileSnitcher(BaseSnitcher):
         :returns: List of tuples of (hostname, dirname)
         :rtype: list
         """
+        basedir = self._basedir()
         host_tuples = []
         exp = re.compile(pattern)
 
-        for f_or_d in os.listdir(settings.DATA_DIR):
+        for f_or_d in os.listdir(basedir):
             r = exp.search(f_or_d)
-            full = os.path.join(settings.DATA_DIR, f_or_d)
+            full = os.path.join(basedir, f_or_d)
             if r and os.path.isdir(full):
                 host_tuples.append((r.group('hostname'), full))
 

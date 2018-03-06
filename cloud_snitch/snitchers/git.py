@@ -132,9 +132,13 @@ class GitSnitcher(BaseSnitcher):
         :type session: neo4j.v1.session.BoltSession
         """
         # Load saved git data
-        filename = os.path.join(settings.DATA_DIR, 'gitrepos.json')
-        with open(filename, 'r') as f:
-            gitlist = json.loads(f.read())
+        try:
+            filename = os.path.join(self._basedir(), 'gitrepos.json')
+            with open(filename, 'r') as f:
+                gitlist = json.loads(f.read())
+        except IOError:
+            logger.info('No data for git could be found.')
+            return
 
         # Let model compute environment identity
         env = EnvironmentEntity(

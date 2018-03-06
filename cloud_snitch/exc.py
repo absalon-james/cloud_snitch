@@ -15,7 +15,7 @@ class PropertyAlreadyExistsError(Exception):
         super(PropertyAlreadyExistsError, self).__init__(msg)
 
 
-class InvalidCollectionError(Exception):
+class RunInvalidError(Exception):
     """Error for a directory in the data directory that isn't a run."""
     def __init__(self, path):
         """Init the error.
@@ -24,4 +24,28 @@ class InvalidCollectionError(Exception):
         :type path: str
         """
         msg = 'Directory {} is not a valid run.'.format(path)
-        super(InvalidCollectionError, self).__init__(msg)
+        super(RunInvalidError, self).__init__(msg)
+
+
+class RunAlreadySyncedError(Exception):
+    """Error for a run that is already synced."""
+    def __init__(self, run):
+        """Init the error.
+
+        :param run: Run instance
+        :type run: cloud_snitch.runs.Run
+        """
+        msg = 'Run at path {} is already synced.'.format(run.path)
+        super(RunAlreadySyncedError, self).__init__(msg)
+
+
+class RunInvalidStatusError(Exception):
+    """Error for trying to slurp a run that is not in finished status."""
+    def __init__(self, run):
+        """Init the error.
+
+        :param run: Run instance
+        :type run: cloud_snitch.runs.Run
+        """
+        msg = 'Run at path {} is in {} status'.format(run.path, run.status)
+        super(RunInvalidStatusError, self).__init__(msg)

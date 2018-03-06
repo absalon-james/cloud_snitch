@@ -5,7 +5,9 @@ import os
 
 from cloud_snitch import settings
 from cloud_snitch import utils
-from cloud_snitch.exc import InvalidCollectionError
+from cloud_snitch.exc import RunInvalidError
+from cloud_snitch.exc import RunAlreadySyncedError
+from cloud_snitch.exc import RunInvalidStatusError
 
 logger = logging.getLogger(__name__)
 
@@ -26,9 +28,9 @@ class Run:
             with open(os.path.join(self.path, 'run_data.json'), 'r') as f:
                 return json.loads(f.read())
         except IOError:
-            raise InvalidCollectionError(self.path)
+            raise RunInvalidError(self.path)
         except ValueError:
-            raise InvalidCollectionError(self.path)
+            raise RunInvalidError(self.path)
 
     @property
     def completed(self):
@@ -44,6 +46,17 @@ class Run:
             except Exception:
                 self._completed = None
         return self._completed
+
+    @property
+    def status(self):
+        """Get status of the run.
+
+        Status should be 'finished' before it can be synced.
+
+        :returns: Status of the run
+        :rtype: str
+        """
+        return self.run_data.get('status')
 
     def _save_data(self):
         """Save run data to disk"""
@@ -62,25 +75,16 @@ class Run:
         self.run_data = self._read_data()
         self._completed = None
 
-    def is_valid(self):
-        """Determine if the run is a valid sync target.
-
-        :returns: True for yes, False otherwise
-        :rtype: bool
-        """
-        if self.run_data.get('synced') is not None:
-            logger.debug('{} is already synced.'.format(self.path))
-            return False
-        if self.run_data.get('status') != 'finished':
-            logger.debug('{} is not finished.'.format(self.path))
-            return False
-        return True
-
     def start(self):
         """Mark run as syncing.
 
         Changes run status to 'syncing'
         """
+        self.update()
+        if self.status != 'finished':
+            raise RunInvalidStatusError(self)
+        if self.run_data.get('synced') is not None:
+            raise RunAlreadySyncedError(self)
         self.run_data['status'] = 'syncing'
         self._save_data()
 
@@ -111,7 +115,7 @@ def find_runs():
             try:
                 run = Run(os.path.join(settings.DATA_DIR, thing))
                 runs.append(run)
-            except InvalidCollectionError:
+            except RunInvalidError:
                 continue
 
     # Sort runs be completed timestamp

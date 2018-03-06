@@ -20,12 +20,12 @@ class UservarsSnitcher(BaseSnitcher):
         :type session: neo4j.v1.session.BoltSession
         """
         # Load saved git data
-        filename = os.path.join(settings.DATA_DIR, 'uservars.json')
+        filename = os.path.join(self._basedir(), 'uservars.json')
         try:
             with open(filename, 'r') as f:
                 uservars_dict = json.loads(f.read())
         except IOError:
-            logger.warning('Unable to locate uservar file.')
+            logger.info('No data for uservars could be found.')
             return
 
         # Try to find the parent environment.

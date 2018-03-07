@@ -49,3 +49,18 @@ class RunInvalidStatusError(Exception):
         """
         msg = 'Run at path {} is in {} status'.format(run.path, run.status)
         super(RunInvalidStatusError, self).__init__(msg)
+
+
+class EnvironmentLockedError(Exception):
+    """Error for environment being locked in database."""
+    def __init__(self, instance):
+        """Init the error.
+
+        :param instance: Instance of environment lock entity
+        :type instance: cloud_snitch.models.EnvironmentLockEntity
+        """
+        msg = 'Environment {}: {} is locked.'.format(
+            instance.account_number,
+            instance.name
+        )
+        super(EnvironmentLockedError, self).__init__(msg)

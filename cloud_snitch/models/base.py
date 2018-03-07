@@ -232,6 +232,20 @@ class VersionedEntity(object):
         :returns: Instance of version entity or None
         :rtype: VersionedEntity|None
         """
+        with session.begin_transaction() as tx:
+            return cls.find_transaction(tx, identity)
+
+    @classmethod
+    def find_transaction(cls, tx, identity):
+        """Finds an entity using provided transaction.
+
+        :param tx: neo4j transaction context.
+        :type tx: neo4j.v1.api.Transaction
+        :param identity: Identity to find
+        :type identity: str
+        :returns: Instance of versioned entity
+        :rtype: VersionedEntity|None
+        """
         find = 'MATCH (n:{} {{ {}:${} }}) RETURN (n)'.format(
             cls.label,
             cls.identity_property,
@@ -240,11 +254,13 @@ class VersionedEntity(object):
         find_map = {}
         find_map[cls.identity_property] = identity
 
-        record = session.run(find, **find_map).single()
+        record = tx.run(find, **find_map).single()
+
+        # Check for empty result
         if record is None:
             return record
 
-        # Single returns a single itemed list.
+        # Build and return entity
         record = record[0]
         return cls(**({k: v for k, v in record.items()}))
 
@@ -401,6 +417,7 @@ class VersionedEntity(object):
             create_clause,
             update_clause
         )
+        logger.debug("Updating identity:\n{}".format(cypher))
         tx.run(
             cypher,
             completed=run_completed,

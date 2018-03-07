@@ -12,6 +12,7 @@ _models = [
     models.ConfigfileEntity,
     models.DeviceEntity,
     models.EnvironmentEntity,
+    models.EnvironmentLockEntity,
     models.GitRemoteEntity,
     models.GitRepoEntity,
     models.GitUntrackedFileEntity,

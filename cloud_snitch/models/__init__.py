@@ -1,6 +1,7 @@
 from apt import AptPackageEntity # noqa F401
 from configfile import ConfigfileEntity # noqa F401
 from environment import EnvironmentEntity # noqa F401
+from environmentlock import EnvironmentLockEntity # noqa F401
 from gitrepo import GitUntrackedFileEntity # noqa F401
 from gitrepo import GitUrlEntity # noqa F401
 from gitrepo import GitRemoteEntity # noqa F401

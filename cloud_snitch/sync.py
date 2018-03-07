@@ -18,6 +18,7 @@ from cloud_snitch.exc import RunInvalidStatusError
 from cloud_snitch.exc import RunAlreadySyncedError
 from cloud_snitch import runs
 from cloud_snitch import utils
+from cloud_snitch.lock import lock_environment
 
 
 logger = logging.getLogger(__name__)
@@ -44,19 +45,19 @@ if __name__ == '__main__':
         foundruns = runs.find_runs()
         for run in foundruns:
             runs.set_current(run)
-            try:
-                run.start()
-                logger.info("Starting collection on {}".format(run.path))
-                main()
-                logger.info("Run completion time: {}".format(
-                    utils.milliseconds(run.completed)
-                ))
-                run.finish()
-            except RunAlreadySyncedError as e:
-                logger.info(e)
-            except RunInvalidStatusError as e:
-                logger.info(e)
+            with lock_environment() as lock:
+                try:
+                    run.start()
+                    logger.info("Starting collection on {}".format(run.path))
+                    main()
+                    logger.info("Run completion time: {}".format(
+                        utils.milliseconds(run.completed)
+                    ))
+                    run.finish()
+                except RunAlreadySyncedError as e:
+                    logger.info(e)
+                except RunInvalidStatusError as e:
+                    logger.info(e)
             runs.unset_current()
     finally:
         driver.close()
-    # main()

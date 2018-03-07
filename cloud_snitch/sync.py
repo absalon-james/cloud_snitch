@@ -17,6 +17,7 @@ from cloud_snitch.driver import driver
 from cloud_snitch.exc import RunInvalidStatusError
 from cloud_snitch.exc import RunAlreadySyncedError
 from cloud_snitch import runs
+from cloud_snitch import utils
 
 
 logger = logging.getLogger(__name__)
@@ -47,6 +48,9 @@ if __name__ == '__main__':
                 run.start()
                 logger.info("Starting collection on {}".format(run.path))
                 main()
+                logger.info("Run completion time: {}".format(
+                    utils.milliseconds(run.completed)
+                ))
                 run.finish()
             except RunAlreadySyncedError as e:
                 logger.info(e)

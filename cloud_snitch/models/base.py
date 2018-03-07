@@ -3,6 +3,8 @@ import pprint
 from cloud_snitch import utils
 from cloud_snitch.exc import PropertyAlreadyExistsError
 
+from cloud_snitch import runs
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ class VersionedEdgeSet(object):
         are current(the `to` field is set to end of time).
 
         Determine the edges that are no longer current and mark them with
-        a `to` set to now
+        a `to` set to the run completion time
 
         Create the edges that need to be added.
 
@@ -38,7 +40,7 @@ class VersionedEdgeSet(object):
         :param edges: List of entity objects to maintain relationships to
         :type edges: list
         """
-        now = utils.milliseconds_now()
+        run_completed = utils.milliseconds(runs.get_current().completed)
         new_edges = set([e.identity for e in edges])
 
         # Match existing edges
@@ -98,7 +100,7 @@ class VersionedEdgeSet(object):
                 srcIdentity=self.source.identity,
                 destIdentity=old_identity,
                 eot=utils.EOT,
-                to=now
+                to=run_completed
             )
 
         # Merge in new edges
@@ -126,7 +128,7 @@ class VersionedEdgeSet(object):
                 cypher,
                 srcIdentity=self.source.identity,
                 destIdentity=add_identity,
-                frm=now,
+                frm=run_completed,
                 to=utils.EOT
             )
 
@@ -317,32 +319,37 @@ class VersionedEntity(object):
 
         if dirty:
             logger.debug("Data is dirty, making a new state.")
-            now = utils.milliseconds_now()
+            run_completed = utils.milliseconds(runs.get_current().completed)
 
             # Mark current state as old
             cypher = """
                 MATCH (c:{} {{ {}:$identity }})
                    -[r1:HAS_STATE {{to: $EOT}}]
                    ->(currentState:{})
-                SET r1.to = $now
+                SET r1.to = $completed
             """
             cypher = cypher.format(
                 self.label,
                 self.identity_property,
                 self.state_label
             )
-            tx.run(cypher, identity=self.identity, now=now, EOT=utils.EOT)
+            tx.run(
+                cypher,
+                identity=self.identity,
+                completed=run_completed,
+                EOT=utils.EOT
+            )
 
             # Create relationship
             prop_map.update({
                 'EOT': utils.EOT,
-                'now': now,
+                'completed': run_completed,
                 'identity': self.identity
             })
             cyper = """
                 MATCH (s:{} {{ {}:$identity }})
                 CREATE (s)
-                    -[r2:HAS_STATE {{to: $EOT, from: $now }}]
+                    -[r2:HAS_STATE {{to: $EOT, from: $completed }}]
                     ->(newState:{} {{ {} }})
                 RETURN newState
             """
@@ -364,6 +371,7 @@ class VersionedEntity(object):
         :type tx: neo4j.v1.api.Transaction
         """
 
+        run_completed = utils.milliseconds(runs.get_current().completed)
         static_props = {}
         for prop in self.static_properties:
             val = getattr(self, prop, None)
@@ -374,11 +382,11 @@ class VersionedEntity(object):
 
         if prop_map:
             create_clause = (
-                'ON CREATE SET  n.created_at = timestamp(), {}'.format(parts)
+                'ON CREATE SET  n.created_at = $completed, {}'.format(parts)
             )
             update_clause = 'ON MATCH SET {}'.format(parts)
         else:
-            create_clause = 'ON CREATE SET  n.created_at = timestamp()'
+            create_clause = 'ON CREATE SET  n.created_at = $completed'
             update_clause = ''
 
         cypher = """
@@ -393,7 +401,12 @@ class VersionedEntity(object):
             create_clause,
             update_clause
         )
-        tx.run(cypher, identity=self.identity, **prop_map)
+        tx.run(
+            cypher,
+            completed=run_completed,
+            identity=self.identity,
+            **prop_map
+        )
         self._update_state(tx)
 
     def update(self, session):

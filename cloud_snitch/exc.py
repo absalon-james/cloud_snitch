@@ -51,6 +51,23 @@ class RunInvalidStatusError(Exception):
         super(RunInvalidStatusError, self).__init__(msg)
 
 
+class RunContainsOldDataError(Exception):
+    """Error for slurping a run with older data than what is in neo4j."""
+    def __init__(self, run, last_update):
+        """Init the error.
+
+        :param run: Run instance,
+        :type run: cloud_snitch.runs.Run
+        :param last_update: Last update time of environment
+        :type last_update: datetime.datetime
+        """
+        msg = 'Run at path {} is older than the last update of {}'.format(
+            run.path,
+            last_update.isoformat()
+        )
+        super(RunContainsOldDataError, self).__init__(msg)
+
+
 class EnvironmentLockedError(Exception):
     """Error for environment being locked in database."""
     def __init__(self, instance):

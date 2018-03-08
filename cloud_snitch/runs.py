@@ -5,8 +5,8 @@ import os
 
 from cloud_snitch import settings
 from cloud_snitch import utils
-from cloud_snitch.exc import RunInvalidError
 from cloud_snitch.exc import RunAlreadySyncedError
+from cloud_snitch.exc import RunInvalidError
 from cloud_snitch.exc import RunInvalidStatusError
 
 logger = logging.getLogger(__name__)
@@ -85,6 +85,7 @@ class Run:
             raise RunInvalidStatusError(self)
         if self.run_data.get('synced') is not None:
             raise RunAlreadySyncedError(self)
+
         self.run_data['status'] = 'syncing'
         self._save_data()
 

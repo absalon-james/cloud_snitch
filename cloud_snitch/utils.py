@@ -2,8 +2,20 @@ import datetime
 import pytz
 
 epoch = datetime.datetime.utcfromtimestamp(0)
+epoch = epoch.replace(tzinfo=pytz.UTC)
 
 EOT = 9223372036854775807
+
+
+def utcdatetimenow():
+    """Get utc now as datetime.
+
+    :returns: Now as a utc datetime object
+    :rtype: datetime.datetime
+    """
+    dt = datetime.datetime.utcnow()
+    dt = dt.replace(tzinfo=pytz.UTC)
+    return dt
 
 
 def milliseconds(dt):
@@ -23,7 +35,7 @@ def milliseconds_now():
     :returns: Number of utc milliseconds since epoch
     :rtype: int
     """
-    return milliseconds(datetime.datetime.utcnow())
+    return milliseconds(utcdatetimenow())
 
 
 def utcdatetime(milliseconds):
@@ -48,7 +60,7 @@ def strtodatetime(isostr):
     """
     left, dot, fraction = isostr.partition('.')
     dt = datetime.datetime.strptime(left, "%Y-%m-%dT%H:%M:%S")
-    dt.replace(tzinfo=pytz.UTC)
+    dt = dt.replace(tzinfo=pytz.UTC)
     return dt
 
 

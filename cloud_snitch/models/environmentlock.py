@@ -1,4 +1,3 @@
-import datetime
 import logging
 
 from base import VersionedEntity
@@ -47,7 +46,7 @@ class EnvironmentLockEntity(VersionedEntity):
         :rtype: int
         """
         identity = '-'.join([account_number, name])
-        lock_time = utils.milliseconds(datetime.datetime.utcnow())
+        lock_time = utils.milliseconds_now()
         with session.begin_transaction() as tx:
             instance = cls.find_transaction(tx, identity)
             if instance is None:

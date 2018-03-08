@@ -308,6 +308,10 @@ class HostSnitcher(BaseSnitcher):
             host = self._host_from_tuple(session, host_tuple)
             hosts.append(host)
 
+        # Return early if no hosts found
+        if not hosts:
+            return
+
         env = EnvironmentEntity(
             account_number=settings.ENVIRONMENT['account_number'],
             name=settings.ENVIRONMENT['name']

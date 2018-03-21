@@ -15,6 +15,19 @@ logger = logging.getLogger(__name__)
 _CURRENT_RUN = None
 
 
+def _cmp(a, b):
+    """Replacement for python 2.7 cmp builtin.
+
+    :param a: First string
+    :type a: str
+    :param b: Second string
+    :type b: str
+    :returns: String comparison value
+    :rtype: int
+    """
+    return ((a > b) - (a < b))
+
+
 class Run:
     """Models a running of the collection of data."""
 
@@ -120,7 +133,7 @@ def find_runs():
                 continue
 
     # Sort runs be completed timestamp
-    runs = sorted(runs, lambda x, y: cmp(x.completed, y.completed))
+    runs = sorted(runs, lambda x, y: _cmp(x.completed, y.completed))
     return runs
 
 

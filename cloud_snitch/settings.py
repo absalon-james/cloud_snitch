@@ -17,13 +17,16 @@ conf_filename = os.environ.get(
     '/etc/cloud_snitch/cloud_snitch.yml'
 )
 
-with open(conf_filename, 'r') as f:
-    conf_data = yaml.load(f.read())
+try:
+    with open(conf_filename, 'r') as f:
+        conf_data = yaml.load(f.read())
+except IOError:
+    conf_data = {}
 
 
 ENVIRONMENT = {
-    'account_number': conf_data['environment']['account_number'],
-    'name': conf_data['environment']['name']
+    'account_number': conf_data.get('environment', {}).get('account_number'),
+    'name': conf_data.get('environment', {}).get('name')
 }
 
 # Base logging
@@ -54,8 +57,8 @@ neo4j_logger.setLevel(conf_level)
 
 
 # Neo4j connections
-NEO4J_USERNAME = conf_data['neo4j']['username']
-NEO4J_PASSWORD = conf_data['neo4j']['password']
-NEO4J_URI = conf_data['neo4j']['uri']
+NEO4J_USERNAME = conf_data.get('neo4j', {}).get('username')
+NEO4J_PASSWORD = conf_data.get('neo4j', {}).get('password')
+NEO4J_URI = conf_data.get('neo4j', {}).get('uri')
 
-DATA_DIR = conf_data['data_dir']
+DATA_DIR = conf_data.get('data_dir')

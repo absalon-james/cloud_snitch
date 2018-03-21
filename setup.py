@@ -2,6 +2,26 @@ from setuptools import setup
 from cloud_snitch.meta import version
 from cloud_snitch.meta import description
 
+entry_points = """
+    [cloud_snitch_models]
+    AptPackage=cloud_snitch.models:AptPackageEntity
+    Configfile=cloud_snitch.models:ConfigfileEntity
+    Device=cloud_snitch.models:DeviceEntity
+    Environment=cloud_snitch.models:EnvironmentEntity
+    GitRemote=cloud_snitch.models:GitRemoteEntity
+    GitRepo=cloud_snitch.models:GitRepoEntity
+    GitUntrackedFile=cloud_snitch.models:GitUntrackedFileEntity
+    GitUrl=cloud_snitch.models:GitUrlEntity
+    Host=cloud_snitch.models:HostEntity
+    Interface=cloud_snitch.models:InterfaceEntity
+    Mount=cloud_snitch.models:MountEntity
+    NameServer=cloud_snitch.models:NameServerEntity
+    Partition=cloud_snitch.models:PartitionEntity
+    PythonPackage=cloud_snitch.models:PythonPackageEntity
+    Uservar=cloud_snitch.models:UservarEntity
+    Virtualenv=cloud_snitch.models:VirtualenvEntity
+"""
+
 setup(
     name="cloud_snitch",
     version=version,
@@ -13,5 +33,6 @@ setup(
         'cloud_snitch.snitchers'
     ],
     package_data={'cloud_snitch': ['cloud_snitch/*']},
-    long_description=description
+    long_description=description,
+    entry_points=entry_points
 )

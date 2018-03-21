@@ -1,6 +1,6 @@
 import logging
 
-from base import VersionedEntity
+from .base import VersionedEntity
 
 logger = logging.getLogger(__name__)
 

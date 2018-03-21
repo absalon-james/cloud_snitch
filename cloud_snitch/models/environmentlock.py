@@ -1,6 +1,6 @@
 import logging
 
-from base import VersionedEntity
+from .base import VersionedEntity
 from cloud_snitch import utils
 from cloud_snitch.exc import EnvironmentLockedError
 

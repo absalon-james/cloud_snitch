@@ -1,9 +1,9 @@
 import logging
 
-from base import VersionedEntity
-from host import HostEntity
-from gitrepo import GitRepoEntity
-from uservar import UservarEntity
+from .base import VersionedEntity
+from .host import HostEntity
+from .gitrepo import GitRepoEntity
+from .uservar import UservarEntity
 
 logger = logging.getLogger(__name__)
 

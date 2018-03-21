@@ -1,9 +1,9 @@
 import logging
 
-from base import VersionedEntity
-from apt import AptPackageEntity
-from configfile import ConfigfileEntity
-from virtualenv import VirtualenvEntity
+from .base import VersionedEntity
+from .apt import AptPackageEntity
+from .configfile import ConfigfileEntity
+from .virtualenv import VirtualenvEntity
 
 logger = logging.getLogger(__name__)
 

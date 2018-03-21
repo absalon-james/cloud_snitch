@@ -436,3 +436,19 @@ class VersionedEntity(object):
         """
         with session.begin_transaction() as tx:
             self._update(tx)
+
+    @classmethod
+    def todict(cls, children=False):
+        d = dict(
+            label=cls.label,
+            state_label=cls.state_label,
+            identity_property=cls.identity_property,
+            static_properties=cls.static_properties,
+            state_properties=cls.state_properties
+        )
+        if d:
+            children = {}
+            for rel_name, childklass in cls.children.values():
+                children[rel_name] = childklass.todict(children=children)
+            d['children'] = children
+        return d

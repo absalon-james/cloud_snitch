@@ -178,7 +178,7 @@ class Registry:
 
         children = {}
         for name, childtuple in klass.children.items():
-            children['name'] = {
+            children[name] = {
                 'rel_name': childtuple[0],
                 'label': childtuple[1].label
             }

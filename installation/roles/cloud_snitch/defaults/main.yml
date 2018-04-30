@@ -10,8 +10,8 @@ cloud_snitch_conf_file: "{{ cloud_snitch_conf_dir }}/cloud_snitch.yml"
 cloud_snitch_log_level: 'DEBUG'
 cloud_snitch_log_format: '%(name)s %(levelname)s - %(message)s'
 
-cloud_snitch_environment_account_number: 1
-cloud_snitch_environment_name: 'james-osa-aio1'
+cloud_snitch_environment_account_number: 12345
+cloud_snitch_environment_name: 'theenvname'
 
 cloud_snitch_neo4j_enabled: True
 cloud_snitch_neo4j_password: password

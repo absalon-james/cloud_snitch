@@ -3,7 +3,21 @@ __metaclass__ = type
 
 import os
 import yaml
-from ansible.plugins.action import ActionBase
+
+# Try the ansible 2.1+ style first
+try:
+    from ansible.plugins.action import ActionBase
+    OLD = False
+
+# Fallback to the old style
+except ImportError:
+    from ansible.runner.return_data import ReturnData
+    OLD = True
+
+    class ActionBase(object):
+        def __init__(self, runner):
+            self.runner = runner
+
 
 # Attempt to load configuration
 conf_file = os.environ.get(
@@ -18,8 +32,39 @@ class ActionModule(ActionBase):
     def _build_args(self):
         return dict(file_list=settings.get('file_snitch_list', []))
 
-    def run(self, tmp=None, task_vars=None):
-        """Run the action module."""
+    def run_old(
+        self,
+        conn,
+        tmp,
+        module_name,
+        module_args,
+        inject,
+        complex_args=None,
+        **kwargs
+    ):
+        """Run the old style action module."""
+        # Only save data if cloud snitch is enabled
+        if not os.environ.get('CLOUD_SNITCH_ENABLED'):
+            result = dict(changed=False, payload=None, doctype='file_dict')
+            return ReturnData(conn=conn, result=result)
+
+        complex_args = self._build_args()
+
+        # Call the file_snitch module.
+        result = self.runner._execute_module(
+            conn,
+            tmp,
+            module_name,
+            module_args,
+            inject=inject,
+            complex_args=complex_args
+        )
+        result.result['changed'] = False
+        result.result['doctype'] = 'file_dict'
+        return result
+
+    def run_new(self, tmp=None, task_vars=None):
+        """Run the new style action module."""
         result = super(ActionModule, self).run(tmp, task_vars)
         result.update(changed=False, payload=None, doctype='file_dict')
 
@@ -37,3 +82,10 @@ class ActionModule(ActionBase):
             )
         )
         return result
+
+    def run(self, *args, **kwargs):
+        """Run the action module."""
+        if OLD:
+            return self.run_old(*args, **kwargs)
+        else:
+            return self.run_new(*args, **kwargs)

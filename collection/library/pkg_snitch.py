@@ -2,7 +2,7 @@
 
 import subprocess
 
-from ansible.module_utils.basic import AnsibleModule
+#from ansible.module_utils.basic import AnsibleModule
 
 DOCUMENTATION = '''
 ---
@@ -10,7 +10,7 @@ module: pkg_snitch
 
 short_description: Gathers data on what packages are installed.
 
-version_added: "2.1.6"
+version_added: "1.9.2"
 
 description:
     - "Parses output of dpkg-query --list."
@@ -120,5 +120,6 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
-    main()
+from ansible.module_utils.basic import *
+
+main()

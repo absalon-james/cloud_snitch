@@ -4,8 +4,6 @@ import os
 import re
 import subprocess
 
-from ansible.module_utils.basic import AnsibleModule
-
 PIP_LIST_PATTERN = re.compile(
     '^(?P<name>.*) \((?P<version>[^ ,]*)(, (?P<path>.*)){0,1}\)$'
 )
@@ -16,7 +14,7 @@ module: pip_snitch
 
 short_description: Gathers python pip package information.
 
-version_added: "2.1.6"
+version_added: "1.9.2"
 
 description:
     - "Identifies virtual environments on host"
@@ -126,12 +124,24 @@ def pip_list(pip_path):
     # Add local/bin/pip to the end
     local_pip_path = os.path.join(local_pip_path, 'local', 'bin', 'pip')
 
+    # Try to get legacy format first. The legacy format is the format
+    # of pip version 8 and below.
+    commands = [
+        [pip_path, 'list', '--format', 'legacy'],
+        [pip_path, 'list'],
+        [local_pip_path, 'list', '--format', 'legacy'],
+        [local_pip_path, 'list']
+    ]
+
     # Try all paths stopping when one works
-    for path in [pip_path, local_pip_path]:
+    for command in commands:
         try:
-            output = subprocess.check_output([path, 'list'])
+            output = subprocess.check_output(command)
         except OSError:
             # Path not found
+            continue
+        except subprocess.CalledProcessError:
+            # --format lecacy not supported
             continue
         if output:
             break
@@ -191,5 +201,6 @@ def main():
     run_module()
 
 
-if __name__ == '__main__':
-    main()
+from ansible.module_utils.basic import *
+
+main()

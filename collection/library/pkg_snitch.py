@@ -70,7 +70,7 @@ def parse_out(output):
     """
     result = []
     lines = output.split('\n')
-    for i in xrange(5, len(lines)):
+    for i in range(5, len(lines)):
         if not lines[i]:
             continue
         status, name, version, arch, desc = lines[i].split(None, 4)

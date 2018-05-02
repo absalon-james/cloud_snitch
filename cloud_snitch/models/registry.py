@@ -93,6 +93,32 @@ class Forest:
             current = current.parent
         return [(n.label, r) for n, r in reversed(path)]
 
+    def paths_from(self, label):
+        """Find all paths from a model with label.
+
+        :param label: Label of model
+        :type label: str
+        :returns: List of paths from label
+        :rtype: list
+        """
+        visited = set()
+        paths = []
+
+        current_node = self.nodes.get(label)
+        stack = [current_node]
+        while (stack):
+            current = stack[-1]
+            visited.add(current)
+            for rel_name, child_node in current.children.items():
+                if child_node not in visited:
+                    stack.append(child_node)
+                    break
+            else:
+                if not current.children:
+                    paths.append([n.label for n in stack])
+                stack.pop()
+        return paths
+
 
 class Registry:
     """Model information about models."""

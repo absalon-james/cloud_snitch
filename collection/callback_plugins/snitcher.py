@@ -24,7 +24,6 @@ DOCUMENTATION = '''
       - This callback dumps apt_sniffer module results to a file
       - Environment Variable CLOUD_SNITCH_ENABLED
       - Environment Variable CLOUD_SNITCH_CONF_FILE
-    type: ?
     requirements:
 '''
 
@@ -50,7 +49,7 @@ class FileHandler:
         :rtype: str
         """
         m = hashlib.md5()
-        m.update(s)
+        m.update(s.encode('utf-8'))
         return m.hexdigest()
 
     def md5_from_file(self, name):

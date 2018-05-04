@@ -67,7 +67,7 @@ def main():
         snitcher.snitch()
 
 
-if __name__ == '__main__':
+def sync():
     try:
         foundruns = runs.find_runs()
         for run in foundruns:
@@ -91,3 +91,7 @@ if __name__ == '__main__':
             runs.unset_current()
     finally:
         driver.close()
+
+
+if __name__ == '__main__':
+    sync()

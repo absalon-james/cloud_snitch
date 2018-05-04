@@ -20,6 +20,8 @@ entry_points = """
     PythonPackage=cloud_snitch.models:PythonPackageEntity
     Uservar=cloud_snitch.models:UservarEntity
     Virtualenv=cloud_snitch.models:VirtualenvEntity
+    [console_scripts]
+    cloud-snitch-sync=cloud_snitch.sync:sync
 """
 
 setup(

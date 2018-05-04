@@ -1,7 +1,7 @@
 import json
 import logging
 
-from base import BaseSnitcher
+from .base import BaseSnitcher
 from cloud_snitch.models import HostEntity
 from cloud_snitch.models import PythonPackageEntity
 from cloud_snitch.models import VirtualenvEntity

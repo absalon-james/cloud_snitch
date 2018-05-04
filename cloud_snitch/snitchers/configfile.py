@@ -2,7 +2,7 @@ import logging
 import os
 import re
 
-from base import BaseSnitcher
+from .base import BaseSnitcher
 from cloud_snitch.models import ConfigfileEntity
 from cloud_snitch.models import HostEntity
 

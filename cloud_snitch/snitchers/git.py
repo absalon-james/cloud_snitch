@@ -3,7 +3,7 @@ import json
 import logging
 import os
 
-from base import BaseSnitcher
+from .base import BaseSnitcher
 from cloud_snitch import settings
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import GitRepoEntity

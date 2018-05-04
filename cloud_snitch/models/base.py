@@ -1,3 +1,4 @@
+import json
 import logging
 import pprint
 from cloud_snitch import utils
@@ -194,13 +195,13 @@ class VersionedEntity(object):
         for prop in props:
             if prop in prop_set:
                 raise PropertyAlreadyExistsError(self.label, prop)
-            setattr(self, prop, kwargs.get(prop))
+            setattr(self, prop, self._encode(kwargs.get(prop)))
             prop_set.add(prop)
 
         # Compute values for keys that are concatenated
         for prop, cat_list in self.concat_properties.items():
             if not kwargs.get(prop):
-                val = '-'.join([str(kwargs.get(p)) for p in cat_list])
+                val = '-'.join([str(self._encode(kwargs.get(p)))for p in cat_list])
                 setattr(self, prop, val)
 
         # Set up relationships
@@ -211,6 +212,20 @@ class VersionedEntity(object):
             edges = VersionedEdgeSet(rel_name, self, rel_type)
             setattr(self, prop, edges)
             prop_set.add(prop)
+
+    def _encode(self, value):
+        """Encodes property into a primitive type suitable for neo4j.
+
+        Looks for lists and dicts. Converts to json
+
+        :param value: Value to encode
+        :type value: object
+        :returns: Encoded object
+        :rtype: object
+        """
+        if isinstance(value, dict) or isinstance(value, list):
+            value = json.dumps(value, sort_keys=True)
+        return value
 
     @property
     def identity(self):

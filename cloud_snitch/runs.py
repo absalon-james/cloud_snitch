@@ -103,6 +103,14 @@ class Run:
         self.run_data['synced'] = datetime.datetime.utcnow().isoformat()
         self._save_data()
 
+    def error(self):
+        """Mark run as just finished.
+
+        An unexpected exception occurred.
+        """
+        self.run_data['status'] = 'finished'
+        self._save_data()
+
 
 def find_runs():
     """Create a list of run objects from the configured data directory.

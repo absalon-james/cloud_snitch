@@ -18,7 +18,7 @@ class BaseSnitcher(object):
         :returns: Base directory of current run
         :rtype: str
         """
-        return os.path.join(runs.get_current()).path
+        return os.path.join(runs.get_current().path)
 
     def _find_host_tuples(self, pattern):
         """Iterate over datadir looking for matching files.

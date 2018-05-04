@@ -88,6 +88,9 @@ def sync():
                     logger.info(e)
                 except RunContainsOldDataError as e:
                     logger.info(e)
+                except Exception:
+                    logger.exception('Unable to complete run.')
+                    run.error()
             runs.unset_current()
     finally:
         driver.close()

@@ -85,7 +85,7 @@ class GitSnitcher(BaseSnitcher):
             merge_base_diff_md5 = None
         else:
             m = hashlib.md5()
-            m.update(''.join(merge_base_diff))
+            m.update(''.join(merge_base_diff).encode('utf-8'))
             merge_base_diff_md5 = m.hexdigest()
 
         # Calculate md5 of working_tree_diff

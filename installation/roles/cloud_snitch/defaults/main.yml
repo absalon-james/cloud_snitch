@@ -19,6 +19,18 @@ cloud_snitch_neo4j_username: neo4j
 cloud_snitch_neo4j_uri: bolt://localhost
 cloud_snitch_neo4j_log_level: 'WARNING'
 
+
+cloud_snitch_sync_enabled: False
+cloud_snitch_sync_venv: '/opt/venvs/cloudsnitch'
+
+cloud_snitch_repo: https://github.com/absalon-james/cloud_snitch.git
+cloud_snitch_version: master
+
+cloud_snitch_sync_pip_list:
+  neo4j-driver: '1.5.3'
+  PyYAML: '3.12.'
+  pytz: '2016.6.1'
+
 cloud_snitch_git_repo_list:
   - '/opt/openstack-ansible'
   - '/opt/rpc-maas'

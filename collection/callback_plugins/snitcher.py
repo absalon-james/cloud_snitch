@@ -202,7 +202,7 @@ class ConfigFileHandler(FileHandler):
         :param result: Ansible task result
         :type result: dict
         """
-        for filename, contents in result.get('payload', {}).iteritems():
+        for filename, contents in result.get('payload', {}).items():
             self._handle_file(host, filename, contents)
 
 

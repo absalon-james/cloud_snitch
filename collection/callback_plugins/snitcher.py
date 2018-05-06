@@ -7,7 +7,12 @@ import json
 import os
 import yaml
 
-from ansible.plugins.callback import CallbackBase
+try:
+    from ansible.plugins.callback import CallbackBase
+except ImportError:
+    class CallbackBase(object):
+        def __init__(self, *args, **kwargs):
+            pass
 
 # Attempt to load configuration
 conf_file = os.environ.get(

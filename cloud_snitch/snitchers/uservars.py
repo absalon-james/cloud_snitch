@@ -46,7 +46,7 @@ class UservarsSnitcher(BaseSnitcher):
         for key, val in uservars_dict.items():
 
             if isinstance(val, dict) or isinstance(val, list):
-                val = json.dumps(val)
+                val = json.dumps(val, sort_keys=True)
 
             uservar = UservarEntity(
                 environment=env.identity,

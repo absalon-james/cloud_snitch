@@ -55,7 +55,8 @@ class AptSnitcher(BaseSnitcher):
 
             # Read data from file
             with open(filename, 'r') as f:
-                aptlist = json.loads(f.read())
+                aptdata = json.loads(f.read())
+                aptlist = aptdata.get('data', [])
 
             # Iterate over package maps
             for aptdict in aptlist:

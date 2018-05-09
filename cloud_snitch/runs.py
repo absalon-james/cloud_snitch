@@ -58,6 +58,24 @@ class Run:
         """
         return self.run_data.get('status')
 
+    @property
+    def environment_account_number(self):
+        """Get account number associated with the run.
+
+        :returns: Account number
+        :rtype: str
+        """
+        return self.run_data.get('environment', {}).get('account_number')
+
+    @property
+    def environment_name(self):
+        """Get name of the environment.
+
+        :returns: Name of the environment.
+        :rtype: str
+        """
+        return self.run_data.get('environment', {}).get('name')
+
     def _save_data(self):
         """Save run data to disk"""
         with open(os.path.join(self.path, 'run_data.json'), 'w') as f:

@@ -2,7 +2,6 @@ from __future__ import (absolute_import, division, print_function)
 __metaclass__ = type
 
 import datetime
-import hashlib
 import json
 import os
 import yaml
@@ -45,6 +44,22 @@ class FileHandler:
         if self.basedir is None:
             raise Exception("No data directory configured.")
 
+        self._doc = {
+            'environment': {
+                'account_number': settings['environment']['account_number'],
+                'name': settings['environment']['name']
+            }
+        }
+
+    def _save(self):
+        """Save contents of _doc to file.
+
+        Data is encoded as json.
+        """
+        data = json.dumps(self._doc)
+        with open(self._outfile_name, 'w') as f:
+            f.write(data)
+
     def handle(self, doctype, host, result):
         """Writes payload as json to file.
 
@@ -63,10 +78,10 @@ class FileHandler:
         :type result: dict
         """
         outfile_name = '{}_{}.json'.format(doctype, host)
-        outfile_name = os.path.join(self.basedir, outfile_name)
-        json_result = json.dumps(result.get('payload', {}))
-        with open(outfile_name, 'w') as f:
-            f.write(json_result)
+        self._outfile_name = os.path.join(self.basedir, outfile_name)
+        self._doc['host'] = host
+        self._doc['data'] = result.get('payload', {})
+        self._save()
 
 
 class SingleFileHandler(FileHandler):
@@ -90,10 +105,9 @@ class SingleFileHandler(FileHandler):
         :type result: dict
         """
         outfile_name = '{}.json'.format(self.filename_prefix)
-        outfile_name = os.path.join(self.basedir, outfile_name)
-        json_result = json.dumps(result.get('payload', {}))
-        with open(outfile_name, 'w') as f:
-            f.write(json_result)
+        self._outfile_name = os.path.join(self.basedir, outfile_name)
+        self._doc['data'] = result.get('payload', {})
+        self._save()
 
 
 class GitFileHandler(SingleFileHandler):
@@ -102,56 +116,6 @@ class GitFileHandler(SingleFileHandler):
 
 class UservarsHandler(SingleFileHandler):
     filename_prefix = 'uservars'
-
-
-class ConfigFileHandler(FileHandler):
-
-    def __init__(self, writedir):
-        """Init the config file handler
-
-        :param writedir: Directory to write to
-        :type writedir: str
-        """
-        super(ConfigFileHandler, self).__init__(writedir)
-
-    def _handle_file(self, host, filename, contents):
-        """Handles a single config file.
-
-        :param host: Name of the host
-        :type host: str
-        :param filename: Name of the config file
-        :type filename: str
-        :param contents: Config file contents
-        :type contents: str
-        """
-        if not contents:
-            contents = ''
-        config_part = 'config_{}'.format(host)
-        if filename.startswith(os.path.sep):
-            _, filename = filename.split(os.path.sep, 1)
-        outfile_name = os.path.join(self.basedir, config_part, filename)
-
-        dirname = os.path.dirname(outfile_name)
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
-
-        with open(outfile_name, 'w') as f:
-            f.write(contents)
-
-    def handle(self, doctype, host, result):
-        """Handles the file_dict doctype
-
-        Iterates over collected config files.
-
-        :param doctype: Unused
-        :type doctype: str
-        :param host: Name of the host
-        :type host: str
-        :param result: Ansible task result
-        :type result: dict
-        """
-        for filename, contents in result.get('payload', {}).items():
-            self._handle_file(host, filename, contents)
 
 
 TARGET_DOCTYPES = [
@@ -169,7 +133,7 @@ DOCTYPE_HANDLERS = {
     'pip_list': FileHandler,
     'gitrepos': GitFileHandler,
     'uservars': UservarsHandler,
-    'file_dict': ConfigFileHandler
+    'file_dict': FileHandler
 }
 
 
@@ -248,7 +212,11 @@ class CallbackModule(CallbackBase):
         # Saved some stats
         self._write_run_data({
             'status': 'running',
-            'started': now.isoformat()
+            'started': now.isoformat(),
+            'environment': {
+                'account_number': settings['environment']['account_number'],
+                'name': settings['environment']['name']
+            }
         })
 
     def playbook_on_stats(self, stats):

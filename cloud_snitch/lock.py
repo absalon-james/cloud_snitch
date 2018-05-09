@@ -1,9 +1,10 @@
 import contextlib
 import logging
 
-from cloud_snitch import settings
+from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentLockEntity
 from cloud_snitch.driver import driver
+
 
 logger = logging.getLogger(__name__)
 
@@ -83,8 +84,8 @@ def lock_environment():
     """
     # Start the lock object
     lock = EnvironmentLock(
-        settings.ENVIRONMENT['account_number'],
-        settings.ENVIRONMENT['name']
+        runs.get_current().environment_account_number,
+        runs.get_current().environment_name
     )
     try:
         # Obtain the lock

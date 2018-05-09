@@ -76,6 +76,8 @@ class PipSnitcher(BaseSnitcher):
 
             with open(filename, 'r') as f:
                 pipdict = json.loads(f.read())
+                pipdict = pipdict.get('data', {})
+
             for path, pkglist in pipdict.items():
                 virtualenv = self._update_virtualenv(
                     session,

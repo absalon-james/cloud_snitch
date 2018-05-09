@@ -14,7 +14,6 @@ from cloud_snitch.snitchers.pip import PipSnitcher
 from cloud_snitch.snitchers.uservars import UservarsSnitcher
 
 from cloud_snitch import runs
-from cloud_snitch import settings
 from cloud_snitch import utils
 from cloud_snitch.driver import driver
 from cloud_snitch.exc import RunInvalidStatusError
@@ -37,8 +36,8 @@ def check_run_time(run):
     # Check to see if run data is new
     with driver.session() as session:
         e_id = '-'.join([
-            settings.ENVIRONMENT['account_number'],
-            settings.ENVIRONMENT['name']
+            runs.get_current().environment_account_number,
+            runs.get_current().environment_name
         ])
         e = EnvironmentEntity.find(session, e_id)
 
@@ -72,7 +71,7 @@ def sync():
         foundruns = runs.find_runs()
         for run in foundruns:
             runs.set_current(run)
-            with lock_environment() as lock:
+            with lock_environment():
                 try:
                     check_run_time(run)
                     run.start()

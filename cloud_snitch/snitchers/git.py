@@ -4,7 +4,6 @@ import logging
 import os
 
 from .base import BaseSnitcher
-from cloud_snitch import settings
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import GitRepoEntity
 from cloud_snitch.models import GitRemoteEntity
@@ -135,15 +134,15 @@ class GitSnitcher(BaseSnitcher):
         try:
             filename = os.path.join(self._basedir(), 'gitrepos.json')
             with open(filename, 'r') as f:
-                gitlist = json.loads(f.read())
+                gitdata = json.loads(f.read())
         except IOError:
             logger.info('No data for git could be found.')
             return
 
         # Let model compute environment identity
         env = EnvironmentEntity(
-            account_number=settings.ENVIRONMENT.get('account_number'),
-            name=settings.ENVIRONMENT.get('name')
+            account_number=gitdata['environment']['account_number'],
+            name=gitdata['environment']['name']
         )
         identity = env.identity
 
@@ -157,7 +156,7 @@ class GitSnitcher(BaseSnitcher):
 
         # Iterate over each git repo
         gitrepos = []
-        for gitdict in gitlist:
+        for gitdict in gitdata.get('data', []):
             gitrepo = self._update_gitrepo(session, env, gitdict)
             gitrepos.append(gitrepo)
 

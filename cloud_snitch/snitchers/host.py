@@ -2,7 +2,7 @@ import json
 import logging
 
 from .base import BaseSnitcher
-from cloud_snitch import settings
+from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import DeviceEntity
 from cloud_snitch.models import HostEntity
@@ -253,6 +253,7 @@ class HostSnitcher(BaseSnitcher):
         hostname, filename = host_tuple
         with open(filename, 'r') as f:
             fulldict = json.loads(f.read())
+            fulldict = fulldict.get('data', {})
 
             # Start kwargs for making the host entity
             hostkwargs = {}
@@ -313,8 +314,8 @@ class HostSnitcher(BaseSnitcher):
             return
 
         env = EnvironmentEntity(
-            account_number=settings.ENVIRONMENT['account_number'],
-            name=settings.ENVIRONMENT['name']
+            account_number=runs.get_current().environment_account_number,
+            name=runs.get_current().environment_name
         )
 
         # Update edges from environment to each host.

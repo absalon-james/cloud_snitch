@@ -201,7 +201,9 @@ class VersionedEntity(object):
         # Compute values for keys that are concatenated
         for prop, cat_list in self.concat_properties.items():
             if not kwargs.get(prop):
-                val = '-'.join([str(self._encode(kwargs.get(p)))for p in cat_list])
+                val = '-'.join(
+                    [str(self._encode(kwargs.get(p)))for p in cat_list]
+                )
                 setattr(self, prop, val)
 
         # Set up relationships

@@ -45,33 +45,6 @@ class FileHandler:
         if self.basedir is None:
             raise Exception("No data directory configured.")
 
-    def md5_from_string(self, s):
-        """Get md5 hex digest from string.
-
-        :param s: Source string
-        :type s: str
-        :returns: md5 hex digest
-        :rtype: str
-        """
-        m = hashlib.md5()
-        m.update(s.encode('utf-8'))
-        return m.hexdigest()
-
-    def md5_from_file(self, name):
-        """Get md5 from file from previous run.
-
-        :param name: Name of the file containing the md5 hexdigest
-        :type name: str
-        :returns: Md5 hexdigest stored in file
-        :rtype: str|None
-        """
-        try:
-            with open(name, 'r') as f:
-                m = f.read()
-        except IOError:
-            return None
-        return m
-
     def handle(self, doctype, host, result):
         """Writes payload as json to file.
 
@@ -89,23 +62,11 @@ class FileHandler:
         :param result: The output result from ansible task
         :type result: dict
         """
-        # Make the filenames
         outfile_name = '{}_{}.json'.format(doctype, host)
-        outmd5_name = '{}_{}.md5'.format(doctype, host)
         outfile_name = os.path.join(self.basedir, outfile_name)
-        outmd5_name = os.path.join(self.basedir, outmd5_name)
-
-        # Get existing md5 sum
-        existing_checksum = self.md5_from_file(outmd5_name)
         json_result = json.dumps(result.get('payload', {}))
-        json_checksum = self.md5_from_string(json_result)
-
-        # Write only if change detected
-        if existing_checksum != json_checksum:
-            with open(outfile_name, 'w') as f:
-                f.write(json_result)
-            with open(outmd5_name, 'w') as f:
-                f.write(json_checksum)
+        with open(outfile_name, 'w') as f:
+            f.write(json_result)
 
 
 class SingleFileHandler(FileHandler):
@@ -129,21 +90,10 @@ class SingleFileHandler(FileHandler):
         :type result: dict
         """
         outfile_name = '{}.json'.format(self.filename_prefix)
-        outmd5_name = '{}.md5'.format(self.filename_prefix)
         outfile_name = os.path.join(self.basedir, outfile_name)
-        outmd5_name = os.path.join(self.basedir, outmd5_name)
-
-        # Get existing checksum
-        existing_checksum = self.md5_from_file(outmd5_name)
         json_result = json.dumps(result.get('payload', {}))
-        json_checksum = self.md5_from_string(json_result)
-
-        # Write only if change detected
-        if existing_checksum != json_checksum:
-            with open(outfile_name, 'w') as f:
-                f.write(json_result)
-            with open(outmd5_name, 'w') as f:
-                f.write(json_checksum)
+        with open(outfile_name, 'w') as f:
+            f.write(json_result)
 
 
 class GitFileHandler(SingleFileHandler):
@@ -180,20 +130,13 @@ class ConfigFileHandler(FileHandler):
         if filename.startswith(os.path.sep):
             _, filename = filename.split(os.path.sep, 1)
         outfile_name = os.path.join(self.basedir, config_part, filename)
-        outmd5_name = "{}.md5".format(outfile_name)
 
         dirname = os.path.dirname(outfile_name)
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
-        existing_md5 = self.md5_from_file(outmd5_name)
-        current_md5 = self.md5_from_string(contents)
-
-        if existing_md5 != current_md5:
-            with open(outfile_name, 'w') as f:
-                f.write(contents)
-            with open(outmd5_name, 'w') as f:
-                f.write(current_md5)
+        with open(outfile_name, 'w') as f:
+            f.write(contents)
 
     def handle(self, doctype, host, result):
         """Handles the file_dict doctype

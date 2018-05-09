@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 import re
@@ -44,10 +45,9 @@ class ConfigfileSnitcher(BaseSnitcher):
         """
         for dirpath, _, filenames in os.walk(dirname):
             for filename in filenames:
-                if not filename.endswith('.md5'):
-                    fullname = os.path.join(dirpath, filename)
-                    _, childname = fullname.split(dirname)
-                    yield (os.path.join(dirpath, childname))
+                fullname = os.path.join(dirpath, filename)
+                _, childname = fullname.split(dirname)
+                yield (os.path.join(dirpath, childname))
 
     def _update_host(self, session, hostname, dirname):
         """Update configuration files for a host.
@@ -69,16 +69,17 @@ class ConfigfileSnitcher(BaseSnitcher):
         configfiles = []
         for filename in self._find_files(dirname):
 
-            # Read content of file and md5
+            # Read content of file and compute md5
             fullpath = os.path.join(dirname, filename[1:])
-            fullpath_md5 = fullpath + '.md5'
             _, name = os.path.split(fullpath)
             try:
                 with open(fullpath, 'r') as f:
                     contents = f.read()
 
-                with open(fullpath_md5, 'r') as f:
-                    md5 = f.read()
+                md5 = hashlib.md5()
+                md5.update(contents.encode('utf-8'))
+                md5 = md5.hexdigest()
+
             except IOError:
                 logger.warning(
                     'Unable to gather config file information for {}.'

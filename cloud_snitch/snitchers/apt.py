@@ -2,7 +2,9 @@ import json
 import logging
 
 from .base import BaseSnitcher
+from cloud_snitch import runs
 from cloud_snitch.models import AptPackageEntity
+from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import HostEntity
 
 logger = logging.getLogger(__name__)
@@ -42,11 +44,17 @@ class AptSnitcher(BaseSnitcher):
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
         """
+        env = EnvironmentEntity(
+            account_number=runs.get_current().environment_account_number,
+            name=runs.get_current().environment_name
+        )
+
         for hostname, filename in self._find_host_tuples(self.file_pattern):
             aptpkgs = []
 
             # Find host in graph, continue if host not found.
-            host = HostEntity.find(session, hostname)
+            host = HostEntity(hostname=hostname, environment=env.identity)
+            host = HostEntity.find(session, host.identity)
             if host is None:
                 logger.warning(
                     'Unable to locate host entity {}'.format(hostname)

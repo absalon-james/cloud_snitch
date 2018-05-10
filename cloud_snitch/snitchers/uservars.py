@@ -43,7 +43,7 @@ class UservarsSnitcher(BaseSnitcher):
 
         # Iterate over each uservariable
         uservars = []
-        for key, val in uservars_dict.items():
+        for key, val in uservars_dict.get('data', {}).items():
 
             if isinstance(val, dict) or isinstance(val, list):
                 val = json.dumps(val, sort_keys=True)

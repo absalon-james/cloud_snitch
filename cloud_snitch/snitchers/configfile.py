@@ -5,6 +5,7 @@ import os
 
 from .base import BaseSnitcher
 from cloud_snitch.models import ConfigfileEntity
+from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import HostEntity
 
 logger = logging.getLogger(__name__)
@@ -25,15 +26,22 @@ class ConfigfileSnitcher(BaseSnitcher):
         :param filename: Name of file
         :type filename: str
         """
+        # Extract config and environment data.
+        with open(filename, 'r') as f:
+            configdata = json.loads(f.read())
+            envdict = configdata.get('environment', {})
+            env = EnvironmentEntity(
+                account_number=envdict.get('account_number'),
+                name=envdict.get('name')
+            )
+            configdata = configdata.get('data', {})
+
         # Find parent host object - return early if not exists.
-        host = HostEntity.find(session, hostname)
+        host = HostEntity(hostname=hostname, environment=env.identity)
+        host = HostEntity.find(session, host.identity)
         if host is None:
             logger.warning('Unable to locate host {}'.format(hostname))
             return
-
-        with open(filename, 'r') as f:
-            configdata = json.loads(f.read())
-            configdata = configdata.get('data', {})
 
         # Iterate over configration files in the host's directory
         configfiles = []

@@ -2,6 +2,8 @@ import json
 import logging
 
 from .base import BaseSnitcher
+from cloud_snitch import runs
+from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import HostEntity
 from cloud_snitch.models import PythonPackageEntity
 from cloud_snitch.models import VirtualenvEntity
@@ -47,7 +49,7 @@ class PipSnitcher(BaseSnitcher):
         :returns: Virtualenv object
         :rtype: VirtualenvEntity
         """
-        virtualenv = VirtualenvEntity(host=host.hostname, path=path)
+        virtualenv = VirtualenvEntity(host=host.identity, path=path)
         pkgs = []
         virtualenv.update(session)
         for pkgdict in pkglist:
@@ -65,9 +67,15 @@ class PipSnitcher(BaseSnitcher):
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
         """
+        env = EnvironmentEntity(
+            account_number=runs.get_current().environment_account_number,
+            name=runs.get_current().environment_name
+        )
+
         for hostname, filename in self._find_host_tuples(self.file_pattern):
             virtualenvs = []
-            host = HostEntity.find(session, hostname)
+            host = HostEntity(hostname=hostname, environment=env.identity)
+            host = HostEntity.find(session, host.identity)
             if host is None:
                 logger.warning(
                     'Unable to locate host entity {}'.format(hostname)

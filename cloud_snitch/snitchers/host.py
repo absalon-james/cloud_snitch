@@ -240,11 +240,13 @@ class HostSnitcher(BaseSnitcher):
         # Update edges from host to nameservers.
         host.nameservers.update(session, nameservers)
 
-    def _host_from_tuple(self, session, host_tuple):
+    def _host_from_tuple(self, session, env, host_tuple):
         """Load hostdata from json file and create HostEntity instance.
 
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
+        :param env: Environment entity hosts belong to.
+        :type env: EnvironmentEntity
         :param host_tuple: (hostname, filename)
         :type host_tuple: tuple
         :returns: Host object
@@ -276,7 +278,11 @@ class HostSnitcher(BaseSnitcher):
                 if val is not None:
                     hostkwargs[host_key] = val
 
-        host = HostEntity(hostname=hostname, **hostkwargs)
+        host = HostEntity(
+            hostname=hostname,
+            environment=env.identity,
+            **hostkwargs
+        )
         host.update(session)
 
         # Update nameservers subgraph
@@ -302,21 +308,21 @@ class HostSnitcher(BaseSnitcher):
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
         """
+        env = EnvironmentEntity(
+            account_number=runs.get_current().environment_account_number,
+            name=runs.get_current().environment_name
+        )
+
         hosts = []
 
         # Update each host entity
         for host_tuple in self._find_host_tuples(self.file_pattern):
-            host = self._host_from_tuple(session, host_tuple)
+            host = self._host_from_tuple(session, env, host_tuple)
             hosts.append(host)
 
         # Return early if no hosts found
         if not hosts:
             return
-
-        env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
-        )
 
         # Update edges from environment to each host.
         env.hosts.update(session, hosts)

@@ -132,7 +132,19 @@ class HostEntity(VersionedEntity):
 
     label = 'Host'
     state_label = 'HostState'
-    identity_property = 'hostname'
+    identity_property = 'hostname_environment'
+
+    static_properties = [
+        'hostname',
+        'environment'
+    ]
+
+    concat_properties = {
+        'hostname_environment': [
+            'hostname',
+            'environment'
+        ]
+    }
 
     state_properties = [
         'architecture',

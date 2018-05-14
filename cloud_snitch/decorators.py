@@ -1,4 +1,5 @@
 import logging
+import random
 import time
 
 from cloud_snitch.exc import MaxRetriesExceededError
@@ -25,11 +26,15 @@ def transient_retry(func):
                 break
             except TransientError:
                 retries += 1
-                logger.info(
-                    "Transient error detected. Sleeping {} seconds."
-                    .format(2 ** retries)
-                )
                 if retries > settings.MAX_RETRIES:
                     raise MaxRetriesExceededError()
-                time.sleep(2 ** retries)
+                # Compute sleep time in ms before converting to seconds.
+                sleeptime = random.randint(100, 500)
+                sleeptime += (2 ** retries) * 100
+                sleeptime = float(sleeptime) / 1000
+                logger.info(
+                    "Transient error detected. Sleeping {} seconds."
+                    .format(sleeptime)
+                )
+                time.sleep(sleeptime)
     return decorated

@@ -23,6 +23,7 @@ entry_points = """
     [console_scripts]
     cloud-snitch-sync=cloud_snitch.sync:main
     cloud-snitch-fake=cloud_snitch.fake:main
+    cloud-snitch-constraints=cloud_snitch.constraints:main
 """
 
 setup(

@@ -27,8 +27,8 @@ _models = [
     models.VirtualenvEntity
 ]
 
-if __name__ == '__main__':
 
+def main():
     driver = GraphDatabase.driver(
         settings.NEO4J_URI,
         auth=(settings.NEO4J_USERNAME, settings.NEO4J_PASSWORD)
@@ -37,8 +37,12 @@ if __name__ == '__main__':
     with driver.session() as session:
         with session.begin_transaction() as tx:
             for _model in _models:
-                resp = tx.run(template.format(
+                tx.run(template.format(
                     label=_model.label,
                     prop=_model.identity_property)
                 )
     driver.close()
+
+
+if __name__ == '__main__':
+    main()

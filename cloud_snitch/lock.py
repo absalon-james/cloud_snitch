@@ -1,9 +1,7 @@
 import contextlib
 import logging
 
-from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentLockEntity
-from cloud_snitch.driver import driver
 
 
 logger = logging.getLogger(__name__)
@@ -11,14 +9,17 @@ logger = logging.getLogger(__name__)
 
 class EnvironmentLock:
     """Simple class for locking an environment."""
-    def __init__(self, account_number, name):
+    def __init__(self, driver, account_number, name):
         """Init the lock
 
+        :param driver: Instance of driver
+        :type driver: neo4j.v1.GraphDatabase.driver
         :param account_number: Environment account number
         :type account_number: str
         :param name: Environment name
         :type name: str
         """
+        self.driver = driver
         self.account_number = account_number
         self.name = name
 
@@ -31,7 +32,7 @@ class EnvironmentLock:
         Calls the entity lock method.
         Saves the key for unlocking the environment later.
         """
-        with driver.session() as session:
+        with self.driver.session() as session:
             self.key = EnvironmentLockEntity.lock(
                 session,
                 self.account_number,
@@ -57,7 +58,7 @@ class EnvironmentLock:
             return
 
         # Call entity release method
-        with driver.session() as session:
+        with self.driver.session() as session:
             released = EnvironmentLockEntity.release(
                 session,
                 self.account_number,
@@ -73,19 +74,24 @@ class EnvironmentLock:
 
 
 @contextlib.contextmanager
-def lock_environment():
+def lock_environment(driver, run):
     """Lock an environment
 
     Prevents multiple sync instances from updating a single environment
     at the same time.
 
+    :param driver: Driver instance
+    :type driver: neo4j.v1.GraphDatabase.driver
+    :param run: Collection run data structure.
+    :type run: cloud_snitch.run.Run
     :yields: The environment lock object
     :ytype: Environment
     """
     # Start the lock object
     lock = EnvironmentLock(
-        runs.get_current().environment_account_number,
-        runs.get_current().environment_name
+        driver,
+        run.environment_account_number,
+        run.environment_name
     )
     try:
         # Obtain the lock

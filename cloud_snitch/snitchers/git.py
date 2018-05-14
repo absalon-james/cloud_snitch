@@ -27,7 +27,7 @@ class GitSnitcher(BaseSnitcher):
         :rtype: GitUntrackedFileEntity
         """
         untracked = GitUntrackedFileEntity(path=path)
-        untracked.update(session)
+        untracked.update(session, self.time_in_ms)
         return untracked
 
     def _update_url(self, session, urlstr):
@@ -39,7 +39,7 @@ class GitSnitcher(BaseSnitcher):
         :type urlstr: str
         """
         url = GitUrlEntity(url=urlstr)
-        url.update(session)
+        url.update(session, self.time_in_ms)
         return url
 
     def _update_remote(self, session, repo, name, urllist):
@@ -57,13 +57,13 @@ class GitSnitcher(BaseSnitcher):
         :type urllist: list
         """
         remote = GitRemoteEntity(name=name, repo=repo.identity)
-        remote.update(session)
+        remote.update(session, self.time_in_ms)
 
         urls = []
         for url in urllist:
             urls.append(self._update_url(session, url))
 
-        remote.urls.update(session, urls)
+        remote.urls.update(session, urls, self.time_in_ms)
         return remote
 
     def _update_gitrepo(self, session, env, repodict):
@@ -108,20 +108,20 @@ class GitSnitcher(BaseSnitcher):
             working_tree_dirty=repodict['working_tree']['is_dirty'],
             working_tree_diff_md5=working_tree_diff_md5
         )
-        gitrepo.update(session)
+        gitrepo.update(session, self.time_in_ms)
 
         # Update all remotes.
         remotes = []
         for name, urls in repodict.get('remotes', {}).items():
             remotes.append(self._update_remote(session, gitrepo, name, urls))
-        gitrepo.remotes.update(session, remotes)
+        gitrepo.remotes.update(session, remotes, self.time_in_ms)
 
         # Update untracked files
         untracked = []
         for path in repodict['working_tree'].get('untracked_files', []):
             untracked.append(self._update_untracked_file(session, path))
 
-        gitrepo.untrackedfiles.update(session, untracked)
+        gitrepo.untrackedfiles.update(session, untracked, self.time_in_ms)
         return gitrepo
 
     def _snitch(self, session):
@@ -161,4 +161,4 @@ class GitSnitcher(BaseSnitcher):
             gitrepos.append(gitrepo)
 
         # Update edges
-        env.gitrepos.update(session, gitrepos)
+        env.gitrepos.update(session, gitrepos, self.time_in_ms)

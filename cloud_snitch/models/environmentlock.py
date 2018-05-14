@@ -56,10 +56,10 @@ class EnvironmentLockEntity(VersionedEntity):
                     name=name,
                     locked=lock_time
                 )
-                instance._update(tx)
+                instance._update(tx, lock_time)
             elif instance.locked == 0:
                 instance.locked = lock_time
-                instance._update(tx)
+                instance._update(tx, lock_time)
             else:
                 # Raise exception. The node exists and locked is not none
                 raise EnvironmentLockedError(instance)
@@ -81,6 +81,7 @@ class EnvironmentLockEntity(VersionedEntity):
         :rtype: bool
         """
         identity = '-'.join([account_number, name])
+        release_time = utils.milliseconds_now()
         with session.begin_transaction() as tx:
             instance = cls.find_transaction(tx, identity)
 
@@ -94,7 +95,7 @@ class EnvironmentLockEntity(VersionedEntity):
                 # If the instance is locked, the key must match the lock time
                 if key == instance.locked:
                     instance.locked = 0
-                    instance._update(tx)
+                    instance._update(tx, release_time)
                     return True
                 # If the key does not match then do not release lock
                 else:

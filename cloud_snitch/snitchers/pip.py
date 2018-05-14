@@ -2,7 +2,6 @@ import json
 import logging
 
 from .base import BaseSnitcher
-from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import HostEntity
 from cloud_snitch.models import PythonPackageEntity
@@ -32,7 +31,7 @@ class PipSnitcher(BaseSnitcher):
             name=pkg.get('name'),
             version=pkg.get('version')
         )
-        pythonpkg.update(session)
+        pythonpkg.update(session, self.time_in_ms)
         return pythonpkg
 
     def _update_virtualenv(self, session, host, path, pkglist):
@@ -51,14 +50,14 @@ class PipSnitcher(BaseSnitcher):
         """
         virtualenv = VirtualenvEntity(host=host.identity, path=path)
         pkgs = []
-        virtualenv.update(session)
+        virtualenv.update(session, self.time_in_ms)
         for pkgdict in pkglist:
             pkgs.append(self._update_python_package(
                 session,
                 virtualenv,
                 pkgdict)
             )
-        virtualenv.pythonpackages.update(session, pkgs)
+        virtualenv.pythonpackages.update(session, pkgs, self.time_in_ms)
         return virtualenv
 
     def _snitch(self, session):
@@ -68,8 +67,8 @@ class PipSnitcher(BaseSnitcher):
         :type session: neo4j.v1.session.BoltSession
         """
         env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
+            account_number=self.run.environment_account_number,
+            name=self.run.environment_name
         )
 
         for hostname, filename in self._find_host_tuples(self.file_pattern):
@@ -94,4 +93,4 @@ class PipSnitcher(BaseSnitcher):
                     pkglist
                 )
                 virtualenvs.append(virtualenv)
-            host.virtualenvs.update(session, virtualenvs)
+            host.virtualenvs.update(session, virtualenvs, self.time_in_ms)

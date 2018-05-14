@@ -61,4 +61,6 @@ NEO4J_USERNAME = conf_data.get('neo4j', {}).get('username')
 NEO4J_PASSWORD = conf_data.get('neo4j', {}).get('password')
 NEO4J_URI = conf_data.get('neo4j', {}).get('uri')
 
+MAX_RETRIES = conf_data.get('neo4j', {}).get('max_retries', 5)
+
 DATA_DIR = conf_data.get('data_dir')

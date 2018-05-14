@@ -21,7 +21,8 @@ entry_points = """
     Uservar=cloud_snitch.models:UservarEntity
     Virtualenv=cloud_snitch.models:VirtualenvEntity
     [console_scripts]
-    cloud-snitch-sync=cloud_snitch.sync:sync
+    cloud-snitch-sync=cloud_snitch.sync:main
+    cloud-snitch-fake=cloud_snitch.fake:main
 """
 
 setup(

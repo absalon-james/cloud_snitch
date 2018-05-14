@@ -2,7 +2,6 @@ import json
 import logging
 
 from .base import BaseSnitcher
-from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import DeviceEntity
 from cloud_snitch.models import HostEntity
@@ -110,9 +109,9 @@ class HostSnitcher(BaseSnitcher):
                     interfacekwargs[interface_key] = val
 
             interface = InterfaceEntity(**interfacekwargs)
-            interface.update(session)
+            interface.update(session, self.time_in_ms)
             interfaces.append(interface)
-        host.interfaces.update(session, interfaces)
+        host.interfaces.update(session, interfaces, self.time_in_ms)
 
     def _update_partitions(self, session, device, devicedict):
         """Update partitions of a device
@@ -142,11 +141,11 @@ class HostSnitcher(BaseSnitcher):
 
             # Create the partition
             partition = PartitionEntity(**partitionkwargs)
-            partition.update(session)
+            partition.update(session, self.time_in_ms)
             partitions.append(partition)
 
         # Update device -> partition edges.
-        device.partitions.update(session, partitions)
+        device.partitions.update(session, partitions, self.time_in_ms)
 
     def _update_devices(self, session, host, ansibledict):
         """Update devices for a host
@@ -175,14 +174,14 @@ class HostSnitcher(BaseSnitcher):
                     devicekwargs[device_key] = val
 
             device = DeviceEntity(**devicekwargs)
-            device.update(session)
+            device.update(session, self.time_in_ms)
 
             self._update_partitions(session, device, devicedict)
 
             devices.append(device)
 
         # Update host -> device edges
-        host.devices.update(session, devices)
+        host.devices.update(session, devices, self.time_in_ms)
 
     def _update_mounts(self, session, host, ansibledict):
         """Update mounts for a host.
@@ -208,11 +207,11 @@ class HostSnitcher(BaseSnitcher):
                     mountkwargs[mount_key] = val
 
             mount = MountEntity(**mountkwargs)
-            mount.update(session)
+            mount.update(session, self.time_in_ms)
             mounts.append(mount)
 
         # Update host -> mounts edges.
-        host.mounts.update(session, mounts)
+        host.mounts.update(session, mounts, self.time_in_ms)
 
     def _update_nameservers(self, session, host, ansibledict):
         """Update nameservers for a host.
@@ -234,11 +233,11 @@ class HostSnitcher(BaseSnitcher):
         nameservers = []
         for nameserver_item in nameserver_list:
             nameserver = NameServerEntity(ip=nameserver_item)
-            nameserver.update(session)
+            nameserver.update(session, self.time_in_ms)
             nameservers.append(nameserver)
 
         # Update edges from host to nameservers.
-        host.nameservers.update(session, nameservers)
+        host.nameservers.update(session, nameservers, self.time_in_ms)
 
     def _host_from_tuple(self, session, env, host_tuple):
         """Load hostdata from json file and create HostEntity instance.
@@ -283,7 +282,7 @@ class HostSnitcher(BaseSnitcher):
             environment=env.identity,
             **hostkwargs
         )
-        host.update(session)
+        host.update(session, self.time_in_ms)
 
         # Update nameservers subgraph
         self._update_nameservers(session, host, ansibledict)
@@ -309,8 +308,8 @@ class HostSnitcher(BaseSnitcher):
         :type session: neo4j.v1.session.BoltSession
         """
         env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
+            account_number=self.run.environment_account_number,
+            name=self.run.environment_name
         )
 
         hosts = []
@@ -325,4 +324,4 @@ class HostSnitcher(BaseSnitcher):
             return
 
         # Update edges from environment to each host.
-        env.hosts.update(session, hosts)
+        env.hosts.update(session, hosts, self.time_in_ms)

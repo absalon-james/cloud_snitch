@@ -3,7 +3,6 @@ import logging
 import os
 
 from .base import BaseSnitcher
-from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import UservarEntity
 
@@ -30,8 +29,8 @@ class UservarsSnitcher(BaseSnitcher):
 
         # Try to find the parent environment.
         env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
+            account_number=self.run.environment_account_number,
+            name=self.run.environment_name
         )
         identity = env.identity
         env = EnvironmentEntity.find(session, identity)
@@ -53,8 +52,8 @@ class UservarsSnitcher(BaseSnitcher):
                 name=key,
                 value=val
             )
-            uservar.update(session)
+            uservar.update(session, self.time_in_ms)
             uservars.append(uservar)
 
         # Update edges
-        env.uservars.update(session, uservars)
+        env.uservars.update(session, uservars, self.time_in_ms)

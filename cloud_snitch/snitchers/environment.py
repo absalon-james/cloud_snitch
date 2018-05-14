@@ -1,7 +1,6 @@
 import logging
 
 from .base import BaseSnitcher
-from cloud_snitch import runs
 from cloud_snitch.models import EnvironmentEntity
 
 logger = logging.getLogger(__name__)
@@ -21,10 +20,10 @@ class EnvironmentSnitcher(BaseSnitcher):
         :rtype: HostEntity
         """
         env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
+            account_number=self.run.environment_account_number,
+            name=self.run.environment_name
         )
-        env.update(session)
+        env.update(session, self.time_in_ms)
         return env
 
     def _snitch(self, session):

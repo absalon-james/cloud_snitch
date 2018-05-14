@@ -2,7 +2,6 @@ import json
 import logging
 
 from .base import BaseSnitcher
-from cloud_snitch import runs
 from cloud_snitch.models import AptPackageEntity
 from cloud_snitch.models import EnvironmentEntity
 from cloud_snitch.models import HostEntity
@@ -35,7 +34,7 @@ class AptSnitcher(BaseSnitcher):
             name=pkgdict.get('name'),
             version=pkgdict.get('version')
         )
-        aptpkg.update(session)
+        aptpkg.update(session, self.time_in_ms)
         return aptpkg
 
     def _snitch(self, session):
@@ -45,8 +44,8 @@ class AptSnitcher(BaseSnitcher):
         :type session: neo4j.v1.session.BoltSession
         """
         env = EnvironmentEntity(
-            account_number=runs.get_current().environment_account_number,
-            name=runs.get_current().environment_name
+            account_number=self.run.environment_account_number,
+            name=self.run.environment_name
         )
 
         for hostname, filename in self._find_host_tuples(self.file_pattern):
@@ -71,4 +70,4 @@ class AptSnitcher(BaseSnitcher):
                 aptpkg = self._update_apt_package(session, aptdict)
                 if aptpkg is not None:
                     aptpkgs.append(aptpkg)
-            host.aptpackages.update(session, aptpkgs)
+            host.aptpackages.update(session, aptpkgs, self.time_in_ms)

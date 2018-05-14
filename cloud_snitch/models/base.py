@@ -2,9 +2,8 @@ import json
 import logging
 import pprint
 from cloud_snitch import utils
+from cloud_snitch.decorators import transient_retry
 from cloud_snitch.exc import PropertyAlreadyExistsError
-
-from cloud_snitch import runs
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +24,7 @@ class VersionedEdgeSet(object):
         self.source = source
         self.dest_type = dest_type
 
-    def _update(self, tx, edges):
+    def _update(self, tx, edges, time_in_ms):
         """Update the versioned edge set
 
         First match all edges from source to dest_type entities that
@@ -40,8 +39,9 @@ class VersionedEdgeSet(object):
         :type tx: neo4j.v1.api.Transaction
         :param edges: List of entity objects to maintain relationships to
         :type edges: list
+        :param time_in_ms: Time in milliseconds.
+        :type time_in_ms: int
         """
-        run_completed = utils.milliseconds(runs.get_current().completed)
         new_edges = set([e.identity for e in edges])
 
         # Match existing edges
@@ -101,7 +101,7 @@ class VersionedEdgeSet(object):
                 srcIdentity=self.source.identity,
                 destIdentity=old_identity,
                 eot=utils.EOT,
-                to=run_completed
+                to=time_in_ms
             )
 
         # Merge in new edges
@@ -129,20 +129,23 @@ class VersionedEdgeSet(object):
                 cypher,
                 srcIdentity=self.source.identity,
                 destIdentity=add_identity,
-                frm=run_completed,
+                frm=time_in_ms,
                 to=utils.EOT
             )
 
-    def update(self, session, edges):
+    @transient_retry
+    def update(self, session, edges, time_in_ms):
         """Update edges inside of a transaction.
 
         :param session: neo4j driver session
         :type session: neo4j.v1.session.BoltSession
         :param edges: List of entity instances to maintain edges
         :type edges: list
+        :param time_in_ms: Time in milliseconds
+        :type time_in_ms: int
         """
         with session.begin_transaction() as tx:
-            self._update(tx, edges)
+            self._update(tx, edges, time_in_ms)
 
 
 class VersionedEntity(object):
@@ -314,11 +317,13 @@ class VersionedEntity(object):
         parts = ', '.join(parts)
         return parts, prop_map
 
-    def _update_state(self, tx):
+    def _update_state(self, tx, time_in_ms):
         """Close current state and create a new state if data differs.
 
         :param tx: neo4j transaction context.
         :type tx: neo4j.v1.api.Transaction
+        :param time_in_ms: Time in milliseconds
+        :type time_in_ms: int
         """
         if not self.state_properties:
             return
@@ -352,7 +357,6 @@ class VersionedEntity(object):
 
         if dirty:
             logger.debug("Data is dirty, making a new state.")
-            run_completed = utils.milliseconds(runs.get_current().completed)
 
             # Mark current state as old
             cypher = """
@@ -369,14 +373,14 @@ class VersionedEntity(object):
             tx.run(
                 cypher,
                 identity=self.identity,
-                completed=run_completed,
+                completed=time_in_ms,
                 EOT=utils.EOT
             )
 
             # Create relationship
             prop_map.update({
                 'EOT': utils.EOT,
-                'completed': run_completed,
+                'completed': time_in_ms,
                 'identity': self.identity
             })
             cyper = """
@@ -397,14 +401,14 @@ class VersionedEntity(object):
             logger.debug("With params:\n{}".format(pprint.pformat(prop_map)))
             resp = tx.run(cypher, **prop_map)
 
-    def _update(self, tx):
+    def _update(self, tx, time_in_ms):
         """Update the entity in the graph.
 
         :param tx: neo4j transaction context
         :type tx: neo4j.v1.api.Transaction
+        :param tx: Time in milliseconds
+        :type tx: int
         """
-
-        run_completed = utils.milliseconds(runs.get_current().completed)
         static_props = {}
         for prop in self.static_properties:
             val = getattr(self, prop, None)
@@ -437,22 +441,25 @@ class VersionedEntity(object):
         logger.debug("Updating identity:\n{}".format(cypher))
         tx.run(
             cypher,
-            completed=run_completed,
+            completed=time_in_ms,
             identity=self.identity,
             **prop_map
         )
-        self._update_state(tx)
+        self._update_state(tx, time_in_ms)
 
-    def update(self, session):
+    @transient_retry
+    def update(self, session, time_in_ms):
         """Update the entity in the graph.
 
         Creates the transaction context for the update
 
         :param session: Neo4j driver session.
         :type session: neo4j.v1.session.BoltSession
+        :param time_in_ms: Time in milliseconds
+        :type time_in_ms: int
         """
         with session.begin_transaction() as tx:
-            self._update(tx)
+            self._update(tx, time_in_ms)
 
     @classmethod
     def todict(cls, children=False):

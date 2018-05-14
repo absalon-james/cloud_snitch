@@ -81,3 +81,10 @@ class EnvironmentLockedError(Exception):
             instance.name
         )
         super(EnvironmentLockedError, self).__init__(msg)
+
+
+class MaxRetriesExceededError(Exception):
+    """Error for maximum number of retries for an update."""
+    def __init__(self):
+        msg = 'Maximum number of retries has been reached.'
+        super(MaxRetriesExceededError, self).__init__(msg)

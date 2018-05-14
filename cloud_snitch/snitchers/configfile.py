@@ -59,11 +59,11 @@ class ConfigfileSnitcher(BaseSnitcher):
                 contents=contents,
                 name=name
             )
-            configfile.update(session)
+            configfile.update(session, self.time_in_ms)
             configfiles.append(configfile)
 
         # Update host -> configfile relationships.
-        host.configfiles.update(session, configfiles)
+        host.configfiles.update(session, configfiles, self.time_in_ms)
 
     def _snitch(self, session):
         """Update the apt part of the graph..

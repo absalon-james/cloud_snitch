@@ -137,13 +137,14 @@ def find_runs():
     :rtype: list
     """
     runs = []
-    for thing in os.listdir(settings.DATA_DIR):
-        if os.path.isdir(os.path.join(settings.DATA_DIR, thing)):
-            try:
-                run = Run(os.path.join(settings.DATA_DIR, thing))
-                runs.append(run)
-            except RunInvalidError:
-                continue
+    for root, dirs, files in os.walk(settings.DATA_DIR):
+        for d in dirs:
+            run_data = os.path.join(root, d, 'run_data.json')
+            if os.path.isfile(run_data):
+                try:
+                    runs.append(Run(os.path.dirname(run_data)))
+                except RunInvalidError:
+                    continue
 
     # Sort runs be completed timestamp
     runs = sorted(runs, key=lambda r: r.completed)

@@ -48,6 +48,21 @@ class Run:
         return self._completed
 
     @property
+    def synced(self):
+        """Get synced datetime
+
+        :returns: The synced datetime
+        :rtype: datetime
+        """
+        synced = self.run_data.get('synced')
+        if synced is not None:
+            try:
+                synced = utils.strtodatetime(synced)
+            except Exception:
+                synced = None
+        return synced
+
+    @property
     def status(self):
         """Get status of the run.
 

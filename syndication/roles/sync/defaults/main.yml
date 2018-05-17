@@ -1,0 +1,4 @@
+cloud_snitch_conf_dir: /etc/cloud_snitch
+cloud_snitch_data_dir: "{{ cloud_snitch_conf_dir }}/data"
+cloud_snitch_sync_concurrency: 4
+cloud_snitch_sync_venv: '/opt/venvs/cloudsnitch'

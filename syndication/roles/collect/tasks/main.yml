@@ -1,0 +1,57 @@
+---
+- name: Run snitch collector
+  command: "openstack-ansible snitch.yml"
+  environment:
+    CLOUD_SNITCH_ENABLED: true
+    CLOUD_SNITCH_CONF_FILE: "{{ cloud_snitch_conf_file }}"
+  args:
+    chdir: "{{ cloud_snitch_playbook | dirname }}"
+  tags:
+    - collect
+
+- name: Find all cloud_snitch data sets
+  find:
+    paths: "{{ cloud_snitch_data_dir }}"
+    file_type: directory
+    recurse: no
+  register: datasets
+  tags:
+    - collect
+
+- name: Archive all datasets
+  archive:
+    path: "{{ item.path }}"
+    dest: "{{ item.path }}.tar.gz"
+    exclude_path:
+      - "{{ cloud_snitch_data_dir }}"
+    format: gz
+  loop: "{{ datasets.files }}"
+  tags:
+    - collect
+
+- name: Fetch archived data sets
+  fetch:
+    src: "{{ item.path }}.tar.gz"
+    dest: "{{ cloud_snitch_data_dir }}/{{ inventory_hostname }}/{{ item.path | basename }}.tar.gz"
+    fail_on_missing: false
+    flat: yes
+  loop: "{{ datasets.files }}"
+  tags:
+    - collect
+
+- name: Empty data directory
+  find:
+    paths: "{{ cloud_snitch_data_dir }}"
+    file_type: any
+    recurse: no
+  register: deletables
+  tags:
+    - collect
+
+- name: Remove archive
+  file:
+    state: absent
+    path: "{{ item.path }}"
+  loop: "{{ deletables.files }}"
+  tags:
+    - collect

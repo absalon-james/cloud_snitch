@@ -1,4 +1,9 @@
 ---
+- name: Clone cloud_snitch git repo
+  git:
+    repo:  "{{ cloud_snitch_repo }}"
+    dest:  "{{ cloud_snitch_repo_dir }}"
+
 - name: Install GitPython into ansible runtime venv
   pip:
     name: "{{ git_python }}"
@@ -15,7 +20,7 @@
   tags:
     - config
 
-- name: Template settings.py
+- name: Template cloud_snitch.yml config
   template:
     src: cloud_snitch.yml.j2
     dest: "{{ cloud_snitch_conf_file }}"

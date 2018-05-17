@@ -1,0 +1,35 @@
+---
+- name: Create Directories
+  file:
+    state: directory
+    path: "{{ item }}"
+  with_items:
+    - "{{ cloud_snitch_conf_dir }}"
+    - "{{ cloud_snitch_data_dir }}"
+  tags:
+    - config
+
+- name: Template cloud_snitch.yml config
+  template:
+    src: cloud_snitch.yml.j2
+    dest: "{{ cloud_snitch_conf_file }}"
+  tags:
+    - config
+
+- name: Cloud Snitch Sync - Virtualenv
+  command: "virtualenv {{ cloud_snitch_sync_venv }} -p python3.5"
+  args:
+    creates: "{{ cloud_snitch_sync_venv }}/bin/activate"
+
+- name: Cloud Snitch Sync - Pip Packages
+  pip:
+    name: "{{ item.key }}"
+    version: "{{ item.value }}"
+    virtualenv: "{{ cloud_snitch_sync_venv }}"
+    extra_args: --isolated
+  with_dict: "{{ cloud_snitch_sync_pip_list }}"
+
+- name: Cloud Snitch Sync - Isntall Sync
+  pip:
+    name: "git+{{ cloud_snitch_repo }}@{{ cloud_snitch_version }}"
+    virtualenv: "{{ cloud_snitch_sync_venv }}"

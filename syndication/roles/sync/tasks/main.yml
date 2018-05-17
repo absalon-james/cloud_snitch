@@ -1,0 +1,36 @@
+- name: Find all .tar.gz
+  find:
+    path: "{{ cloud_snitch_data_dir }}"
+    file_type: file
+    recurse: yes
+    patterns: '*.tar.gz'
+  register: dataarchives
+  tags:
+    - sync
+
+- name: Unarchive datarchives
+  unarchive:
+    src: "{{ item.path }}"
+    dest: "{{ item.path | dirname }}"
+  loop: "{{ dataarchives.files }}"
+  tags:
+    - sync
+
+- name: Remove archives
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ dataarchives.files }}"
+  tags:
+    - sync
+
+- name: Run cloud-snitch-sync
+  command: "{{ cloud_snitch_sync_venv }}/bin/cloud-snitch-sync --concurrency {{ cloud_snitch_sync_concurrency }}"
+  tags:
+    - sync
+
+- name: Run cloud-snitch-clean
+  command: "{{ cloud_snitch_sync_venv }}/bin/cloud-snitch-clean"
+  tags:
+    - sync
+    - clean

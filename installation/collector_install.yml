@@ -1,0 +1,14 @@
+---
+- hosts: cloud_snitch_collectors
+  tasks:
+    - name: Test openstack-ansible available
+      command: which openstack-ansible
+      register: osacheck
+      ignore_errors: yes
+
+    - name: Install collector
+      include_role:
+        name: collector_install
+      when: osacheck.rc == 0
+
+  

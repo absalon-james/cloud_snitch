@@ -4,21 +4,21 @@ ansible_venv: /opt/ansible_runtime
 git_python: GitPython
 git_python_version: 2.1.8
 
+cloud_snitch_repo_dir: /opt/cloud_snitch
 cloud_snitch_conf_dir: /etc/cloud_snitch
 cloud_snitch_data_dir: "{{ cloud_snitch_conf_dir }}/data"
 cloud_snitch_conf_file: "{{ cloud_snitch_conf_dir }}/cloud_snitch.yml"
-cloud_snitch_log_level: 'DEBUG'
+cloud_snitch_log_level: 'INFO'
 cloud_snitch_log_format: '%(name)s %(levelname)s - %(message)s'
 
-cloud_snitch_environment_account_number: 12345
-cloud_snitch_environment_name: 'theenvname'
+cloud_snitch_environment_account_number: unknown
+cloud_snitch_environment_name: unknown
 
 cloud_snitch_neo4j_enabled: True
 cloud_snitch_neo4j_password: password
 cloud_snitch_neo4j_username: neo4j
 cloud_snitch_neo4j_uri: bolt://localhost
 cloud_snitch_neo4j_log_level: 'WARNING'
-
 
 cloud_snitch_sync_enabled: False
 cloud_snitch_sync_venv: '/opt/venvs/cloudsnitch'

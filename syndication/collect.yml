@@ -1,0 +1,7 @@
+- hosts: cloud_snitch_collectors
+  roles:
+    - collect
+
+- hosts: cloud_snitch_sync
+  roles:
+    - sync

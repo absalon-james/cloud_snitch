@@ -1,0 +1,39 @@
+---
+- name: ensure cryptsetup package installed
+  package:
+    name: cryptsetup
+    state: present
+
+- name: load crypt key file
+  template:
+    src: templates/keyfile.j2
+    dest: "/root/{{ crypt_name }}.txt"
+    owner: root
+    group: root
+    mode: 0600
+
+- name: setup the crypttab
+  crypttab:
+    state: present
+    name: "{{ crypt_name }}"
+    backing_device: "{{ crypt_backing_device }}"
+    password: "/root/{{ crypt_name }}.txt"
+    opts: luks
+
+- name: unlock encrypted directory
+  command: /usr/sbin/cryptdisks_start {{ crypt_name|quote }}
+
+- name: setup mountpoint
+  mount:
+    state: mounted
+    path: "{{ crypt_mount_point }}"
+    fstype: ext4
+    src: "/dev/mapper/{{ crypt_name }}"
+
+- name: ensure mount directory permissions
+  file:
+    path: "{{ crypt_mount_point }}"
+    state: directory
+    owner: "{{ crypt_mount_owner }}"
+    group: "{{ crypt_mount_group }}"
+    mode: 0750

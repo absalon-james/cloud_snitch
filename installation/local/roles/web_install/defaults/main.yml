@@ -1,0 +1,88 @@
+---
+cloud_snitch_repo: https://github.com/absalon-james/cloud_snitch.git
+cloud_snitch_version: master
+
+cloud_snitch_web_allowed_hosts:
+  - '*'
+
+
+cloud_snitch_web_user: www-data
+cloud_snitch_web_group: www-data
+
+cloud_snitch_web_log_dir: /var/log/cloud_snitch_web
+
+cloud_snitch_web_repo: https://github.com/absalon-james/cloud_snitch_web.git
+cloud_snitch_web_project_dir: /opt/web/cloud_snitch_web
+cloud_snitch_web_app_dir: "{{ cloud_snitch_web_project_dir }}/cloud_snitch_web"
+cloud_snitch_web_venv: /opt/venvs/cloudsnitch
+cloud_snitch_web_version: master
+
+cloud_snitch_web_secret_key: super_secret_key
+
+cloud_snitch_web_debug: False
+
+cloud_snitch_web_neo4j_username: neo4j
+cloud_snitch_web_neo4j_password: password
+cloud_snitch_web_neo4j_uri: bolt://localhost
+cloud_snitch_web_neo4j_max_connection_lifetime: 300
+cloud_snitch_web_neo4j_max_connection_pool_size: 50
+
+cloud_snitch_web_celery_result_backend: 'django-cache'
+cloud_snitch_web_celery_broker_url: 'redis://localhost:6379/1'
+cloud_snitch_web_celery_broker_transport_options: "{'socket_timeout': 60}"
+
+cloud_snitch_web_cache_backend: 'django_redis.cache.RedisCache'
+cloud_snitch_web_cache_location: 'redis://localhost:6379/0'
+cloud_snitch_web_cache_timeout: 3600
+cloud_snitch_web_cache_key_prefix: cloud_snitch
+cloud_snitch_web_cache_options:
+  CLIENT_CACHE: django_redis.client.DefaultClient
+  MAX_ENTRIES: 5000
+
+cloud_snitch_web_csrf_cookie_name: _cloud_snitch_csrf_cookie_
+
+cloud_snitch_web_login_url: '/web/login/'
+cloud_snitch_web_login_redirect_url: '/web/'
+
+cloud_snitch_web_superuser_username: 'cloudsnitchadmin'
+cloud_snitch_web_superuser_email: 'someone@somewhere.com'
+cloud_snitch_web_superuser_password: 'secrete'
+
+cloud_snitch_web_server_name: "{{ ansible_hostname | default('cloudsnitch') }}"
+cloud_snitch_web_port: 80
+cloud_snitch_web_ssl_port: 8080
+cloud_snitch_web_listen_ports:
+  - "{{ cloud_snitch_web_port }}"
+  - "{{ cloud_snitch_web_ssl_port }}"
+
+cloud_snitch_web_service_name: apache2
+cloud_snitch_web_static_root: "{{ cloud_snitch_web_project_dir }}/static"
+
+cloud_snitch_web_pip_pkgs:
+  django: 2.0.2
+  djangorestframework: 3.7.7
+  neo4j-driver: 1.5.3
+  celery: 4.1.0
+  django-celery-results: 1.0.1
+  redis: 2.10.6
+  PyYAML: '3.12.'
+  django-redis: 4.9.0
+
+
+cloud_snitch_web_alt_name: "{{ ansible_default_ipv4.address }}"
+cloud_snitch_web_self_signed_subject: "/C=US/ST=Texas/L=San Antonio/O=IT/CN={{ cloud_snitch_web_server_name }}/subjectAltName=IP.1={{ cloud_snitch_web_alt_name }}"
+cloud_snitch_web_ssl_key: /etc/ssl/private/cloudsnitchweb.key
+cloud_snitch_web_ssl_cert: /etc/ssl/certs/cloudsnitchweb.pem
+
+
+cloud_snitch_web_celery_user: "{{ cloud_snitch_web_user }}"
+cloud_snitch_web_celery_group: "{{ cloud_snitch_web_group }}"
+cloud_snitch_web_celery_conf: "{{ cloud_snitch_web_app_dir }}/celery"
+cloud_snitch_web_celery_working_dir: "{{ cloud_snitch_web_project_dir }}"
+cloud_snitch_web_celery_nodes: w1
+cloud_snitch_web_celery_app: cloud_snitch_web.celery
+cloud_snitch_web_celery_time_limit: 1800
+cloud_snitch_web_celery_concurrency: 2
+cloud_snitch_web_celery_pid_file: /var/run/celery/%n.pid
+cloud_snitch_web_celery_log_file: "{{ cloud_snitch_web_log_dir }}/%n%I.log"
+cloud_snitch_web_celery_log_level: INFO

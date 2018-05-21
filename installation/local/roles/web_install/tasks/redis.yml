@@ -1,0 +1,4 @@
+---
+- name: Redis - Install redis server
+  apt:
+    name: redis-server

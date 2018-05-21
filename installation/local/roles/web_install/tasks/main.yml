@@ -1,0 +1,104 @@
+---
+- name: Install python-pip
+  apt:
+    name: python-pip
+
+- name: Install virtualenv
+  pip:
+    name: virtualenv
+
+- name: Create cloudsnitch virtualenv
+  command: "virtualenv {{ cloud_snitch_web_venv }} -p python3.5"
+  args:
+    creates: "{{ cloud_snitch_web_venv }}/bin/activate"
+
+- name: Pip packages
+  pip:
+    name: "{{ item.key }}"
+    version: "{{ item.value }}"
+    virtualenv: "{{ cloud_snitch_web_venv }}"
+  with_dict: "{{ cloud_snitch_web_pip_pkgs }}"
+
+- name: Pip install cloud snitch repo
+  pip:
+    name: "git+{{ cloud_snitch_repo }}@{{ cloud_snitch_version }}"
+    virtualenv: "{{ cloud_snitch_web_venv }}"
+  notify:
+    - Restart Celery Worker
+
+- name: Cloud Snitch Web - Log Dir
+  file:
+    path: "{{ cloud_snitch_web_log_dir }}"
+    state: directory
+    mode: 0755
+    owner: "{{ cloud_snitch_web_user }}"
+    group: "{{ cloud_snitch_web_group }}"
+
+- name: Cloud Snitch Web - Clone repo
+  git:
+    repo: "{{ cloud_snitch_web_repo }}"
+    dest: "{{ cloud_snitch_web_project_dir }}"
+    version: "{{ cloud_snitch_web_version }}"
+
+- name: Cloud Snitch Web - Settings
+  template:
+    src: settings.py.j2
+    dest: "{{ cloud_snitch_web_app_dir }}/settings.py"
+  tags:
+    - config
+  notify:
+    - Restart Apache2
+    - Restart Celery Worker
+
+- include: apache2.yml
+  tags:
+    - apache
+
+- include: redis.yml
+  tags:
+    - redis
+
+- include: celery.yml
+  tags:
+    - celery
+
+- name: Cloud Snitch Web - Database Directory
+  file:
+    path: "{{ cloud_snitch_web_project_dir }}/db"
+    state: directory
+    mode: 0700
+    owner: "{{ cloud_snitch_web_user }}"
+    group: "{{ cloud_snitch_web_group }}"
+
+- name: Cloud Snitch Web - Migrate
+  django_manage:
+    app_path: "{{ cloud_snitch_web_project_dir }}"
+    virtualenv: "{{ cloud_snitch_web_venv }}"
+    command: "migrate"
+
+- name: Cloud Snitch Web - Database File Permissions
+  file:
+    path: "{{ cloud_snitch_web_project_dir }}/db/db.sqlite3"
+    mode: 0600
+    owner: "{{ cloud_snitch_web_user }}"
+    group: "{{ cloud_snitch_web_group }}"
+
+- name: Cloud Snitch Web - Collect Static
+  django_manage:
+    app_path: '{{ cloud_snitch_web_project_dir }}'
+    virtualenv: '{{ cloud_snitch_web_venv }}'
+    command: 'collectstatic'
+
+- name: Cloud Snitch Web - Check if django superuser exists
+  django_manage:
+    app_path: '{{ cloud_snitch_web_project_dir }}'
+    virtualenv: '{{ cloud_snitch_web_venv }}'
+    command: 'shell -c "from django.contrib.auth.models import User; print(User.objects.filter(is_superuser=True).exists())"'
+  register: superuser_exists
+
+- name: Cloud Snitch Web - Create superuser if it doesnt exist
+  when: superuser_exists.out.find("True") == -1
+  django_manage:
+    app_path: '{{ cloud_snitch_web_project_dir }}'
+    virtualenv: '{{ cloud_snitch_web_venv }}'
+    command: 'shell -c "from django.contrib.auth.models import User; User.objects.create_superuser(\"{{ cloud_snitch_web_superuser_username }}\", \"{{ cloud_snitch_web_superuser_email }}\", \"{{ cloud_snitch_web_superuser_password }}\")"'

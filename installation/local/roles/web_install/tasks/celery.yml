@@ -1,0 +1,47 @@
+---
+- name: Celery - Pid File tmpfs
+  template:
+    src: tmpfile_celery.conf.j2
+    dest: /etc/tmpfiles.d/celery.conf
+  notify:
+    -  Restart Celery Worker
+  tags:
+    - celery
+    - config
+
+- name: Celery - First run pid dir
+  file:
+    path: "{{ cloud_snitch_web_celery_pid_file | dirname }}"
+    state: directory
+    owner: "{{ cloud_snitch_web_celery_user }}"
+    group: "{{ cloud_snitch_web_celery_group }}"
+  notify:
+    - Restart Celery Worker
+  tags:
+    - config
+    - celery
+
+- name: Celery - celery.service
+  template:
+    src: celery.service.j2
+    dest: /etc/systemd/system/celery.service
+  tags:
+    - config
+    - celery
+  notify: Restart Celery Worker
+
+- name: Celery - celery environment
+  template:
+    src: celery.j2
+    dest: "{{ cloud_snitch_web_celery_conf }}"
+  tags:
+    - config
+    - celery
+  notify: Restart Celery Worker
+
+- name: Celery - Service
+  service:
+    name: celery
+    state: started
+  tags:
+    - celery

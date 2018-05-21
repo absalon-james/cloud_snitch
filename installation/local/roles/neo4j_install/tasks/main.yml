@@ -1,0 +1,39 @@
+---
+- name: Neo4j - Add key
+  apt_key:
+    url: https://debian.neo4j.org/neotechnology.gpg.key
+    state: present
+
+- name: Neo4j - Add repo
+  apt_repository:
+    repo: deb http://debian.neo4j.org/repo stable/
+    state: present
+    filename: neo4j
+
+- name: Neo4j - Install
+  apt:
+    name: "neo4j={{ neo4j_version }}"
+
+- name: Create ssl policy directory
+  file:
+    path: '{{ neo4j_home }}/{{ neo4j_ssl_policy_base_directory}}'
+    state: 'directory'
+    owner: neo4j
+    group: neo4j
+    mode: 0700
+
+- name: Neo4j - Set Initial Password
+  shell: "neo4j-admin set-initial-password '{{ neo4j_password }}'"
+  ignore_errors: True
+
+- name: Neo4j - configuration
+  template:
+    src: neo4j.conf.j2
+    dest: /etc/neo4j/neo4j.conf
+  notify:
+    - Restart Neo4j
+
+- name: Neo4j - Service
+  service:
+    name: "{{ neo4j_service_name }}"
+    state: started

@@ -1,0 +1,24 @@
+- hosts: neo4j
+  vars:
+    crypt_name: neo4jcryptvol
+    crypt_backing_device: /dev/sdd
+    crypt_mount_point: /var/lib/neo4j
+    crypt_disk_password: "{{ pwsafe_neo4jdisk_password }}"
+    crypt_owner: neo4j
+    crypt_group: neo4j
+  roles:
+    - crypt
+  tags:
+    - crypt
+
+- hosts: neo4j
+  roles:
+    - java_install
+  tags:
+    - java
+
+- hosts: neo4j
+  roles:
+    - neo4j_install
+  tags:
+    - neo4j

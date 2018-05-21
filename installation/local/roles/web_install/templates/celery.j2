@@ -1,0 +1,23 @@
+# Name of nodes to start
+# here we have a single node
+CELERYD_NODES="{{ cloud_snitch_web_celery_nodes }}"
+
+# Absolute or relative path to the 'celery' command:
+CELERY_BIN="{{ cloud_snitch_web_venv }}/bin/celery"
+
+# App instance to use
+# comment out this line if you don't use an app
+CELERY_APP="{{ cloud_snitch_web_celery_app }}"
+
+# How to call manage.py
+CELERYD_MULTI="multi"
+
+# Extra command-line arguments to the worker
+CELERYD_OPTS="{% if cloud_snitch_web_celery_time_limit is defined %}--time-limit={{ cloud_snitch_web_celery_time_limit }}{% endif %} {% if cloud_snitch_web_celery_concurrency is defined %}--concurrency={{ cloud_snitch_web_celery_concurrency }}{% endif %}"
+
+# - %n will be replaced with the first part of the nodename.
+# - %I will be replaced with the current child process index
+#   and is important when using the prefork pool to avoid race conditions.
+CELERYD_PID_FILE="/var/run/celery/%n.pid"
+CELERYD_LOG_FILE="{{ cloud_snitch_web_celery_log_file }}"
+CELERYD_LOG_LEVEL="{{ cloud_snitch_web_celery_log_level }}"

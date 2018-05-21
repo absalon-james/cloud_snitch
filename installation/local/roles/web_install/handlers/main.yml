@@ -1,0 +1,14 @@
+---
+- name: Restart Apache2
+  service:
+    name: "{{ cloud_snitch_web_service_name }}"
+    enabled: yes
+    state: restarted
+    daemon_reload: "{{ (ansible_service_mgr == 'systemd') | ternary ('yes', omit) }}"
+
+- name: Restart Celery Worker
+  service:
+    name: celery.service
+    enabled: yes
+    state: restarted
+    daemon_reload: "{{ (ansible_service_mgr == 'systemd') | ternary ('yes', omit) }}"

@@ -1,0 +1,28 @@
+---
+- name: Apt add repository
+  apt:
+    name: software-properties-common
+
+- name: Oracle Repository
+  apt_repository:
+    repo: ppa:webupd8team/java
+
+- name: Accept java license
+  debconf:
+    name: oracle-java8-installer
+    question: shared/accepted-oracle-license-v1-1
+    value: 'true'
+    vtype: select
+
+- name: Install ca-certificates
+  apt:
+    name: ca-certificates
+
+- name: Install java 8
+  apt:
+    name: oracle-java8-installer
+
+- name: Install java 8 set default
+  apt:
+    name: oracle-java8-set-default
+  

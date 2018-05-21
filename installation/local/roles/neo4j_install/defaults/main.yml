@@ -1,0 +1,26 @@
+neo4j_version: '1:3.3.5'
+neo4j_default_listen_address: 'localhost'
+
+neo4j_bolt_enabled: 'true'
+neo4j_bolt_port: 7687
+neo4j_bolt_tls_level: 'REQUIRED'
+
+neo4j_http_enabled: 'true'
+neo4j_http_port: 7474
+neo4j_http_listen_address: '127.0.0.1'
+
+neo4j_https_enabled: 'true'
+neo4j_https_port: 7473
+
+neo4j_service_name: 'neo4j'
+
+
+neo4j_home: '/var/lib/neo4j'
+neo4j_ssl_policy_name: 'cloudsnitch'
+neo4j_ssl_policy_base_directory: 'certificates/{{ neo4j_ssl_policy_name }}'
+neo4j_ssl_policy_trust_all: 'true'
+neo4j_ssl_policy_allow_key_generation: 'true'
+
+# values are 'NONE', 'OPTIONAL', 'REQUIRE'
+# Setting to anything other than None will break the web browser
+neo4j_ssl_policy_client_auth: 'NONE'

@@ -1,0 +1,79 @@
+---
+- name: Apache - Install apache server
+  apt:
+    name: apache2
+  tags:
+    - apache
+
+- name: Apache - Install mod_wsgi
+  apt:
+    name: libapache2-mod-wsgi-py3
+  tags:
+    - apache
+
+- name: Apache - Self Signed Cert
+  notify:
+    - Restart Apache2
+  tags:
+    - apache
+    - config
+  args:
+    creates: "{{ cloud_snitch_web_ssl_cert }}"
+  command: >
+    openssl req -new -nodes -sha256 -x509
+    -subj "{{ cloud_snitch_web_self_signed_subject }}"
+    -days 3650
+    -keyout "{{ cloud_snitch_web_ssl_key }}"
+    -out "{{ cloud_snitch_web_ssl_cert }}"
+
+- name: Apache - modules
+  apache2_module:
+    name: "{{ item }}"
+    state: present
+  tags:
+    - config
+    - apache
+  notify:
+    - Restart Apache2
+  with_items:
+    - wsgi
+    - rewrite
+    - ssl
+
+- name: Apache - Listen Ports
+  template:
+    src: listen_ports.conf.j2
+    dest: /etc/apache2/ports.conf
+  notify:
+    - Restart Apache2
+  tags:
+    - config
+    - apache
+   
+- name: Apache - Cloud Snitch Web conf
+  template:
+    src: 090-cloudsnitch.conf.j2
+    dest: /etc/apache2/sites-available/090-cloudsnitch.conf
+  tags:
+    - config
+    - apache
+  notify: Restart Apache2
+
+- name: Apache - Disable default site
+  file:
+    name: /etc/apache2/sites-enabled/000-default.conf
+    state: absent
+  tags:
+    - apache
+    - config
+  notify: Restart Apache2
+
+- name: Apache - Enable cloud_snitch_web site
+  file:
+    name: /etc/apache2/sites-enabled/090-cloudsnitch.conf
+    state: link
+    src: /etc/apache2/sites-available/090-cloudsnitch.conf
+  tags:
+    - config
+    - apache
+  notify: Restart Apache2

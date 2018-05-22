@@ -1,0 +1,65 @@
+<div ng-controller="DetailsController">
+  <div class="hxRow">
+
+    <div class="hxCol hxSpan-9 left">
+      <span class="hxHeading-5">{{ type }}</span>
+      <h2>
+        <span class="hxHeading-5">{{ type }}</span>
+        {{ identity }}
+        <hx-busy ng-if="isBusy()"></hx-busy>
+      </h2>
+    </div>
+
+    <div class="hxSpan-3 right">
+      <select name="detailTime" ng-model="f.time" class="hxTextCtrl" ng-disabled="isBusy()" ng-change="update()">
+        <optgroup label="Search">
+          <option value="{{ paneObj.search.time }}">{{ paneObj.search.time }}</option>
+        </optgroup>
+        <optgroup label="Changes">
+          <option ng-repeat="t in f.times track by $index" value="{{t}}"><hx-icon type="technical-change"></hx-icon>{{ t }}</option>
+        </optgroup>
+      </select>
+    </div>
+
+  </div>
+  <div>
+    <table class="hxTable hxHoverable hxTable--condensed">
+      <tbody>
+        <tr ng-repeat="(key, value) in obj">
+            <td>{{ key }}</td>
+            <td>
+                <pre class="configContents" ng-if="f.type == 'Configfile' && key == 'contents'"><code>{{ value }}</code></pre>
+                <span ng-if="!(f.type == 'Configfile' && key == 'contents')">{{ value }}</span>
+            </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div ng-repeat="(childRef, childObj) in children">
+      <div class="hxRow childToggle" ng-click="toggleChild(childObj)">
+        <div class="hxCol hxSpan-11"><h3>{{ childObj.records.length }} {{ childObj.label }}s</h3></div>
+        <div class="hxCol hxSpan-1">
+          <button class="hxBtn hxLink">
+            <hx-icon ng-if="childObj.show" type="angle-up"></hx-icon>
+            <hx-icon ng-if="!childObj.show" type="angle-down"></hx-icon>
+          </button>
+        </div>
+      </div>
+
+      <div ng-show="childObj.show" class="searchResultsContainer">
+        <table class="hxTable hxHoverable hxTable--condensed searchResults">
+          <thead>
+            <tr>
+              <th ng-repeat="header in childHeaders(childObj) track by $index">{{ header }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="childRecord in childObj.records track by $index" ng-click="details(childObj.label, childRecord)">
+              <td ng-repeat="value in childValues(childObj, childRecord)">{{ value }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

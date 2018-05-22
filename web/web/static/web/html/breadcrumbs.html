@@ -1,0 +1,8 @@
+<nav class="hxBreadcrumb">
+  <a ng-repeat-start="frame in paneObj.stack" ng-click="frameJump($index)">
+    <span ng-if="frame.state == 'search'">Search</span>
+    <span ng-if="frame.state == 'results'">Results</span>
+    <span ng-if="frame.state == 'details'">{{ identity($index) | truncate }}</span>
+  </a>
+  <hx-icon ng-if="!$last" type="angle-right" class="delimiter" ng-repeat-end></hx-icon>
+</nav>

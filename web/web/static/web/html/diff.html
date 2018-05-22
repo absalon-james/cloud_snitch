@@ -1,0 +1,68 @@
+<hx-panel ng-controller="DiffController">
+  <hx-panelhead>
+    <div class="diffCtrls right">
+      <div class="btnGrpRight hxBtnGroup hxLink">
+        <button class="hxBtn" ng-click="closeDiff()"><hx-icon type="times"></hx-icon></button>
+      </div>
+    </div>
+    <div class="hxBox-xs">
+      <h2>
+        Diffing {{diff.type}}: {{diff.id}} at time {{diff.leftTime}} and {{diff.rightTime}}
+      </h2>
+    </div>
+  </hx-panelhead>
+  <hx-panelbody>
+    <div ng-if="state != 'done'" class="diffBusy">
+      <h2><hx-busy ng-if="state != 'empty' && state != 'error'"></hx-busy>&nbsp;&nbsp;{{ humanState() }}.</h2>
+    </div>
+    <div ng-if="detailNode && detailNodeType" class="diffNodeDetail hxBox-xl">
+      <hx-panel>
+        <hx-panelhead>
+          <h3>{{ detailNodeType }}: {{ detailNodeId }}</h3>
+        </hx-panelhead>
+        <hx-panelbody>
+          <table class="hxTable hxTable--condensed">
+            <thead>
+              <tr>
+                <th></th>
+                <th>{{ diff.leftTime }}</th>
+                <th>{{ diff.rightTime }}</th>
+             </tr>
+            </head>
+            <tbody>
+              <tr ng-repeat="prop in detailProps()">
+                <td>{{ prop }}</td>
+                <td class="{{ detailProp(prop, 'left').css }}">{{ detailProp(prop, 'left').val }}</td>
+                <td class="{{ detailProp(prop, 'right').css }}">{{ detailProp(prop, 'right').val }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </hx-panelbody>
+        <hx-panelfoot>
+          <button class="hxBtn hxPrimary" ng-click="closeDetail()">Close</button>
+        </hx-panelfoot>
+      </hx-panel>
+    </div>
+
+    <svg id="diff" ng-show="state == 'done'">
+      <defs>
+        <radialGradient id="addedGradient" cx="50%" cy="50%" r="50%">
+          <!-- dark #1B5E20 middle #43A047 light #81C784 -->
+          <stop stop-color="#81C784" offset="0%" />
+          <stop stop-color="#43A047" offset="50%" />
+          <stop stop-color="#1B5E20" offset="100%" />
+        </radialGradient>
+        <radialGradient id="removedGradient" cx="50%" cy="50%" r="50%">
+          <stop stop-color="#ef5350" offset="0%" />
+          <stop stop-color="#d32f2f" offset="50%" />
+          <stop stop-color="#b71c1c" offset="100%" />
+        </radialGradient>
+        <radialGradient id="unchangedGradient" cx="50%" cy="50%" r="50%">
+          <stop stop-color="#90A4AE" offset="0%" />
+          <stop stop-color="#546E7A" offset="50%" />
+          <stop stop-color="#37474F" offset="100%" />
+        </radialGradient>
+      </defs>
+    </svg>
+  </hx-panelbody>
+</hx-panel>

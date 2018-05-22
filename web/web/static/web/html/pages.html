@@ -1,0 +1,9 @@
+<div ng-if="$ctrl.totalPages() > 1" class="pagination">
+  <div class="hxPagination hxBtnGroup">
+    <button class="hxBtn" ng-disabled="$ctrl.current == 1" ng-click="$ctrl.pageChange(1)"><hx-icon type="angle-start"></hx-icon></button>
+    <button class="hxBtn" ng-disabled="$ctrl.current == 1" ng-click="$ctrl.pageChange($ctrl.current - 1)"><hx-icon type="angle-left"></hx-icon></button>
+    <button ng-repeat="page in $ctrl.pageList()" class="hxBtn"  ng-click="$ctrl.pageChange(page)" aria-current="{{ $ctrl.current == page }}">{{ page }}</button>
+    <button class="hxBtn" ng-disabled="$ctrl.current == $ctrl.totalPages()" ng-click="$ctrl.pageChange($ctrl.current + 1)"><hx-icon type="angle-right"></hx-icon></button>
+    <button class="hxBtn" ng-disabled="$ctrl.current == $ctrl.totalPages()" ng-click="$ctrl.pageChange($ctrl.totalPages())"><hx-icon type="angle-end"></hx-icon></button>
+  </div>
+</div>

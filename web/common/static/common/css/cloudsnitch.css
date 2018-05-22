@@ -1,0 +1,317 @@
+.hxTextCtrl.ng-invalid {
+  border: 2px solid #d32f2f;
+}
+
+.hxTextCtrl.ng-invalid:focus {
+  box-shadow: 0 0 4px rgba(211, 47, 47, 0.5);
+}
+
+div.close-outer {
+  display: table-cell;
+  vertical-align: middle;
+}
+
+.searchResultsContainer {
+  overflow: auto;
+}
+
+.searchResults tbody tr {
+  cursor: pointer;
+}
+.childToggle {
+  cursor: pointer;
+}
+
+.configContents {
+  max-height: 300px;
+  width: 650px;
+}
+
+.childToggle .hxCol {
+  margin-bottom: 5px;
+}
+
+/* body layout */
+
+body.hxHorizontal {
+  grid-template-rows: 3.5em 1fr;
+}
+
+/*body > #head {
+  height : 1.5rem;
+}*/
+
+.panesContainer {
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+  backface-visibility: hidden;
+  will-change: overflow;
+}
+
+pane {
+  overflow: auto;
+  height: auto;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  border-right: 1px solid #0c7c84;
+  width: 800px;
+  height: 100%;
+}
+
+/*
+pane > hx-panel > hx-panelbody {
+  overflow-x: auto;
+}
+*/
+
+hx-panel > hx-panelbody {
+  padding : 1rem 1.5rem;
+}
+
+
+
+
+/* add pane control */
+
+div.addpane {
+  height: 100%;
+  min-height: 700px;
+  width: 2.5rem;
+  color: #0c7c84;
+  cursor: pointer;
+  border-right: 1px solid #0c7c84;
+}
+
+div.addpane:hover {
+  background-color: #16b9d4;
+  border-color: transparent;
+  color: #ffffff;
+}
+
+div.addpane-wrapper-outer {
+  display: table;
+}
+
+div.addpane-rotate {
+  transform: rotate(90deg);
+  transform-origin: center;
+  margin-top: .5rem;
+  white-space: nowrap;
+  font-size: 1em;
+  line-height: 2.5rem;
+  width: 2.5rem;
+}
+
+
+
+
+/* pane controls */
+
+pane .pane-container {
+  padding-top: 0;
+}
+
+panetopctrl .pane-ctrls,
+.diffContainer .diffCtrls {
+  background-color: #ddd;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-bottom: 0;
+}
+
+
+
+
+/* typography */
+
+body #head #page_title {
+  line-height: 1.5rem;
+  color: white;
+  font-size: .7em;
+  font-weight: 700;
+  margin-left : .5rem;
+  font-family: 'Roboto', sans-serif;
+}
+
+
+.center {
+  text-align: center;
+}
+
+
+
+
+/* suggested deviations from helix */
+
+/* line height of title element is taller than spec */
+h2, .hxHeading-2, .hxSectionTitle {
+  line-height: 2rem;
+}
+
+/* need the affordance to add contextual subtitles */
+.subtitle {
+  margin-top: -0.5rem;
+  display: block;
+  font-size: .9em;
+  font-style: italic;
+  opacity: .7;
+}
+
+/* when table does not start with a checkbox, reduce left pad to 0 */
+.hxTable--condensed thead tr th:first-child,
+.hxTable--condensed tbody tr td:first-child {
+  padding-left: 0;
+}
+
+/* i hate how big and un-differentiated the table headers and labels are */
+.smallcap, label,
+table.hxTable thead tr th {
+  font-weight: 500;
+  font-size: .6em;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* tables have too much top padding. the rest of the box models seem to have only bottom pad, this should follow the same pattern */
+table.hxTable thead tr th {
+  padding-top: 0;
+}
+
+/* hover state does not offer enough visual differentiation, especially on low-end monitors where the contrast is insufficient for this to be visible */
+.hxTable.hxHoverable tbody tr:hover td,
+.hxTable.hxHoverable tbody tr:hover th,
+.hxTable--hover tbody tr:hover td,
+.hxTable--hover tbody tr:hover th {
+  background-color: #eee;
+}
+
+.diffContainer {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid #0c7c84;
+  background-color: #fff;
+}
+
+.right {
+  text-align: right;
+}
+
+.left {
+  text-align: left;
+}
+
+svg#diff {
+  width: 100%;
+  height: 100%;
+}
+
+svg#diff path.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+.node {
+  cursor: pointer;
+}
+
+
+div.diffNodeDetail {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+    max-width: 1000px;
+    border: 1px solid #0c7c84;
+    background-color: #fff;
+}
+
+div.diffNodeDetail hx-panel {
+    max-height:500px;
+}
+
+.diffLeft {
+    background-color: #EF9A9A;
+    color: #B71C1C;
+}
+
+.diffRight {
+    background-color: #C8E6C9;
+    color: #1B5E20;
+}
+
+.diffBusy {
+  position: absolute;
+  top: 50px;
+  left: 50px;
+  bottom: 50px;
+  right: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.diffBusy h2 {
+  width: 350px;
+  text-align: center;
+}
+
+.hxPagination {
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
+}
+
+.hxPagination .hxBtn {
+    border: none;
+    min-width: 2.5rem;
+}
+
+.hxBtnGroup > .hxBtn {
+    border-radius: 0;
+}
+
+.hxBtn[disabled] {
+    background-color: transparent;
+    border-color: #d8d8d8;
+    color: #d8d8d8;
+    cursor: not-allowed;
+}
+
+.hxPagination .hxBtn[aria-current="true"] {
+    background-color: #0c7c84;
+    color: #ffffff;
+}
+
+
+.pagination {
+  text-align: center;
+}
+
+.pagedTable th div.titleWrapper {
+  display: flex;
+  align-items: center;
+}
+
+.titleWrapper .iconWrapper {
+  max-width: 1.5em;
+}
+
+.topNav {
+  margin-left: auto;
+  max-width: 50%;
+}
+
+.topNav .hxBtn {
+  border: none;
+  color: white;
+}
+
+.topNav .hxBtn:hover {
+  background: black;
+  color: white;
+  border: none;
+}

@@ -1,0 +1,122 @@
+<h2>Find Object</h2>
+
+<form name="searchForm" novalidate>
+  <div class="hxRow">
+
+    <div class="hxSpan-3 hxBox-xs">
+      <label>Object Type</label>
+      <select class="hxTextCtrl" name="typeSelect" ng-model="paneObj.search.type" ng-change="updatePath()" ng-required="true">
+        <option ng-repeat="type in typesService.types" value="{{type.label}}">{{type.label}}</option>
+      </select>
+    </div>
+
+    <div class="hxSpan-4 hxBox-xs">
+      <label>Identity</label>
+      <input class="hxTextCtrl" type="text" name="identity" ng-model="paneObj.search.identity" ng-required="false" />
+    </div>
+
+    <div class="hxSpan-3 hxBox-xs">
+      <div>
+        <label>Time</label>
+        <input class="hxTextCtrl" type="text" name="time" ng-model="paneObj.search.time" ng-required="false" datetime-picker date-format="yyyy-MM-dd HH:mm:ss" close-on-select="true" date-time />
+      </div>
+      <div ng-if="searchForm.time.$invalid">
+        <div ng-if="searchForm.time.$error.dateTime">
+          Time must be in 'YYYY-MM-DD HH:mm:ss' format.
+        </div>
+        <div ng-if="searchForm.time.$error.required">
+          Time is required.
+        </div>
+      </div>
+    </div><!-- hxSpan -->
+  </div><!-- hxRow -->
+
+
+  <div class="hxRow">
+    <div class="hxBox-md hxSpan-12">
+      <h6>Filters:</h6>
+
+      <div class="hxRow" ng-if="paneObj.search.filters.length == 0">
+        <div class="hxCol hxSpan-12 center"><p><i>No filters yet. Click 'Add Filter' to add a filter</i></p></div>
+      </div>
+
+      <div class="hxRow" ng-if="paneObj.search.filters.length > 0">
+        <div class="hxSpan-2">Type</div>
+        <div class="hxSpan-1"></div>
+        <div class="hxSpan-2">Property</div>
+        <div class="hxSpan-1"></div>
+        <div class="hxSpan-2">Operator</div>
+        <div class="hxSpan-1"></div>
+        <div class="hxSpan-2">Value</div>
+      </div>
+
+      <div class="hxRow" ng-repeat="filter in paneObj.search.filters" ng-form="f">
+        <div class="hxSpan-2 hxBox-xs">
+          <div>
+            <select class="hxTextCtrl" name="model" ng-model="filter.model" ng-required="true">
+              <option ng-repeat="type in path" value="{{type}}">{{type}}</option>
+            </select>
+          </div>
+          <div ng-if="f.model.$invalid">
+            <div ng-if="f.model.$error.required">
+              Type is required.
+            </div>
+          </div>
+        </div>
+        <div class="hxSpan-1"></div>
+        <div class="hxSpan-2 hxBox-xs">
+          <div>
+            <select class="hxTextCtrl" name="property" ng-model="filter.property" ng-required="true">
+              <option ng-repeat="property in typesService.properties[filter.model]" value="{{property}}">{{property}}</option>
+            </select>
+          </div>
+          <div ng-if="f.property.$invalid">
+            <div ng-if="f.property.$error.required">
+              Property is required.
+            </div>
+          </div>
+        </div>
+
+        <div class="hxSpan-1"></div>
+
+        <div class="hxSpan-2 hxBox-xs">
+          <div>
+            <select class="hxTextCtrl" name="operator" ng-model="filter.operator" ng-required="true">
+              <option ng-repeat="operator in operators" value="{{operator}}">{{operator}}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="hxSpan-1"></div>
+
+        <div class="hxSpan-2 hxBox-xs">
+          <div>
+            <input class="hxTextCtrl" name="filterValue" ng-model="filter.value" ng-required="true" ng-maxlength="256" />
+          </div>
+          <div ng-if="f.filterValue.$invalid">
+            <div ng-if="f.filterValue.$error.required">
+              Value is required.
+            </div>
+
+            <div ng-if="f.filterValue.$error.maxlength">
+              Value must be less than 256 characters.
+            </div>
+          </div>
+        </div>
+
+        <div class="">
+          <div class="close-outer">
+              <button class="hxBtn hxLink" ng-click="removeFilter(filter)"><hx-icon type="times"></hx-icon></button>
+          </div>
+        </div>
+      </div><!-- hxRow -->
+    </div><!-- hxBox-md -->
+  </div><!-- hxRow -->
+
+  <div class="hxRow">
+    <div class="hxCol">
+      <button class="hxBtn" ng-click="searchForm.$valid && addFilter()">Add Filter</button>
+      <button class="hxBtn hxPrimary" ng-click="searchForm.$valid && search()">Search</button>
+    </div>
+  </div>
+</form>

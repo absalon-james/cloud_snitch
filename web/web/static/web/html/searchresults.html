@@ -1,0 +1,18 @@
+<div ng-controller="ResultsController">
+  <h2>Search Results <hx-busy ng-if="busy"></hx-busy></h2>
+  <pagedtable
+    thing="paneObj.search.type"
+    records="rows"
+    titles="headers"
+    total="count"
+    sort-column="f.ctx.sortColumnIndex"
+    sort-direction="f.ctx.sortDirection"
+    on-row-click="rowClick(index)"
+    on-sort-change="sortChange(sortColumnIndex)"></pagedtable>
+  <pages
+    total="count"
+    pagesize="f.ctx.pagesize"
+    current="f.ctx.page"
+    n-pages="5"
+    on-page-change="pageChange(newPage)"></pages>
+</div>

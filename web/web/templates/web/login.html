@@ -1,0 +1,60 @@
+{% extends "common/base.html" %}
+
+{% block title %}Cloud Snitch - Login{% endblock %}
+
+{% block content %}
+<div id="stage" ng-controller="MainController">
+  <main id="content" style="justify-content: center;">
+    <div style="align-self: center;">
+      <h2>Login to Cloud Snitch</h2>
+      {% if form.errors %}
+        <p><hx-error>Your username and password didn't match. Please try again.</hx-error></p>
+      {% endif %}
+
+      {% if next %}
+        {% if user.is_authenticated %}
+        <p>
+          <hx-error>
+            Your account doesn't have access to this page. To proceed,
+            please login with an account that has access.
+          </hx-error>
+        </p>
+        {% endif %}
+      {% endif %}
+
+      <form method="post" action="{% url 'web:login' %}">
+        {% csrf_token %}
+        <table>
+          <tr>
+            <td>{{ form.username.label_tag }}</td>
+            <td>
+               <input
+                 class="hxTextCtrl"
+                 type="text"
+                 name="username"
+                 value="{{ form.username.value|default_if_none:'' }}"
+                 id="id_username"
+                 maxlength="254"
+                 required
+                 autofocus />
+            </td>
+          </tr>
+          <tr>
+            <td>{{ form.password.label_tag }}</td>
+            <td>
+              <input
+                class="hxTextCtrl"
+                type="password"
+                name="password"
+                id="id_password"
+                required />
+            </td>
+          </tr>
+        </table>
+        <button class="hxBtn hxPrimary">Login</button>
+        <input type="hidden" name="next" value="{{ next }}" />
+      </form>
+    </div>
+  </main>
+</div>
+{% endblock %}

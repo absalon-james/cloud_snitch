@@ -1,0 +1,12 @@
+<hx-panel>
+
+  <panetopctrl></panetopctrl>
+
+  <hx-panelbody>
+    <ng-include src="'/static/web/html/breadcrumbs.html'"></ng-include>
+    <ng-include ng-if="frame().state == 'search'" src="'/static/web/html/searchpane.html'"></ng-include>
+    <ng-include ng-if="frame().state == 'results'" src="'/static/web/html/searchresults.html'"></ng-include>
+    <ng-include ng-if="frame().state == 'details'" src="'/static/web/html/details.html'"></ng-include>
+  </hx-panelbody>
+
+</hx-panel>

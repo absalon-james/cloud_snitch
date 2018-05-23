@@ -11,14 +11,14 @@ parser.add_argument(
     '--inventory',
     type=str,
     help='Location of uam dynamic inventory.',
-    default='/opt/rpc-uam/ansible/inventory/inventory.py'
+    default='/etc/ansible/inventory/inventory.py'
 )
 
 parser.add_argument(
     '--hostvars_dir',
     type=str,
     help='Location of directory to contain host_vars.',
-    default='/opt/rpc-uam/ansible/inventory/host_vars'
+    default='/etc/ansible/inventory/host_vars'
 )
 
 snitches = [

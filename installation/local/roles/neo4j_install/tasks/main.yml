@@ -14,6 +14,14 @@
   apt:
     name: "neo4j={{ neo4j_version }}"
 
+- name: Neo4j - Home Permissions
+  file:
+    path: "{{ neo4j_home }}"
+    state: directory
+    owner: "{{ neo4j_user }}"
+    group: "{{ neo4j_group }}"
+    mode: 0750
+
 - name: Create ssl policy directory
   file:
     path: '{{ neo4j_home }}/{{ neo4j_ssl_policy_base_directory}}'

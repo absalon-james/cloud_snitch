@@ -37,7 +37,7 @@
 - name: Cloud Snitch Web - Clone repo
   git:
     repo: "{{ cloud_snitch_web_repo }}"
-    dest: "{{ cloud_snitch_web_project_dir }}"
+    dest: "{{ cloud_snitch_web_repo_dir }}"
     version: "{{ cloud_snitch_web_version }}"
 
 - name: Cloud Snitch Web - Settings

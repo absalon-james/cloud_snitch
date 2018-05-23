@@ -12,6 +12,18 @@
     group: root
     mode: 0600
 
+- name: Luks Format Device
+  command: "cryptsetup --batch-mode --key-file /root/{{crypt_name}}.txt luksFormat {{ crypt_backing_device }}"
+  when: crypt_init is defined
+
+- name: Luks Open
+  command: "cryptsetup luksOpen --key-file /root/{{crypt_name}}.txt {{ crypt_backing_device }} {{ crypt_name }}"
+  when: crypt_init is defined
+
+- name: Make file system
+  command: "mkfs.ext4 /dev/mapper/{{ crypt_name }}"
+  when: crypt_init is defined
+
 - name: setup the crypttab
   crypttab:
     state: present
@@ -19,6 +31,7 @@
     backing_device: "{{ crypt_backing_device }}"
     password: "/root/{{ crypt_name }}.txt"
     opts: luks
+  no_log: true
 
 - name: unlock encrypted directory
   command: /usr/sbin/cryptdisks_start {{ crypt_name|quote }}
@@ -29,11 +42,3 @@
     path: "{{ crypt_mount_point }}"
     fstype: ext4
     src: "/dev/mapper/{{ crypt_name }}"
-
-- name: ensure mount directory permissions
-  file:
-    path: "{{ crypt_mount_point }}"
-    state: directory
-    owner: "{{ crypt_mount_owner }}"
-    group: "{{ crypt_mount_group }}"
-    mode: 0750

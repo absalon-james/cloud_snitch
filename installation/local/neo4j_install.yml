@@ -2,10 +2,8 @@
   vars:
     crypt_name: neo4jcryptvol
     crypt_backing_device: /dev/sdd
-    crypt_mount_point: /var/lib/neo4j
-    crypt_disk_password: "{{ pwsafe_neo4jdisk_password }}"
-    crypt_owner: neo4j
-    crypt_group: neo4j
+    crypt_mount_point: "{{ neo4j_home }}"
+    crypt_disk_password: "{{ pwsafe_neo4j_disk_password }}"
   roles:
     - crypt
   tags:

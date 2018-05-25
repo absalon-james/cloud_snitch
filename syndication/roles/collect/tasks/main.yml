@@ -4,6 +4,7 @@
   environment:
     CLOUD_SNITCH_ENABLED: true
     CLOUD_SNITCH_CONF_FILE: "{{ cloud_snitch_conf_file }}"
+  ignore_errors: yes
   args:
     chdir: "{{ cloud_snitch_playbook | dirname }}"
   tags:

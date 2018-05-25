@@ -63,7 +63,7 @@ cloud_snitch_web_pip_pkgs:
   django: 2.0.2
   djangorestframework: 3.7.7
   neo4j-driver: 1.5.3
-  celery: 4.1.0
+  celery: 4.1.1
   django-celery-results: 1.0.1
   redis: 2.10.6
   PyYAML: '3.12.'

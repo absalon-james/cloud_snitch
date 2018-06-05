@@ -30,7 +30,6 @@ angular.module('cloudSnitch').factory('cloudSnitchApi', ['$http', '$q', 'timeSer
 
     function convertTime(str) {
         var t = timeService.fromstr(str);
-        t = timeService.utc(t);
         t = timeService.milliseconds(t);
         return t
     }

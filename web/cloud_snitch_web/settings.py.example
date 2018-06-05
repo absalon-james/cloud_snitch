@@ -20,29 +20,32 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'SOME_SECRET_KEY'
+SECRET_KEY = 'your_secret_key'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '*',
+]
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'rest_framework',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework',
     'django_celery_results',
     'neo4jdriver',
     'web.apps.WebConfig',
     'common.apps.CommonConfig',
-    'api.apps.ApiConfig'
+    'api.apps.ApiConfig',
+    # 'raxauth'
 ]
 
 MIDDLEWARE = [
@@ -50,7 +53,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware', # Normal db auth
+    # 'raxauth.middleware.AuthenticationMiddleware', # Auth from rackspace
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -82,16 +86,16 @@ WSGI_APPLICATION = 'cloud_snitch_web.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'NAME': os.path.join(BASE_DIR, 'db', 'db.sqlite3'),
     }
 }
 
 NEO4J = {
-    'username': "username",
-    'password': "password",
-    'uri': "bolturi",
-    'max_connection_lifetime':  5 * 60,
-    'max_connection_pool_size': 50
+    'username': "neo4j_username",
+    'password': "neo4j_password",
+    'uri': "bolt://neo4j_uri",
+    'max_connection_lifetime':  300,
+    'max_connection_pool_size': 50,
 }
 
 # Password validation
@@ -131,6 +135,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = '/opt/web/cloud_snitch/web/static'
 
 CELERY_RESULT_BACKEND = 'django-cache'
 CELERY_BROKER_URL = 'redis://localhost:6379/1'
@@ -141,13 +146,29 @@ CACHES = {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': 'redis://localhost:6379/0',
         'TIMEOUT': 3600,
+        'KEY_PREFIX': 'cloud_snitch',
         'OPTIONS': {
+            'MAX_ENTRIES': '5000',
             'CLIENT_CACHE': 'django_redis.client.DefaultClient',
-            'MAX_ENTRIES': '2000'
         },
-        'KEY_PREFIX': 'cloud_snitch'
+    },
+    'sessions': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/3',
+        'TIMEOUT': 3600,
+        'KEY_PREFIX': 'cloud_snitch_sessions',
+        'OPTIONS': {
+            'MAX_ENTRIES': '5000',
+            'CLIENT_CACHE': 'django_redis.client.DefaultClient',
+        },
     }
 }
+
+SESSION_CACHE_ALIAS = 'sessions'
+SESSION_TIMEOUT = 3600
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+
+CSRF_COOKIE_NAME = '_cloud_snitch_csrf_cookie_'
 
 DEFAULT_CACHE_TIMEOUT = 30
 
@@ -171,14 +192,42 @@ LOGGING = {
         },
         'api': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
+        },
+        'neo4jdriver': {
+            'handlers': ['console'],
+            'level': 'INFO'
         },
         'api.query': {
             'handlers': ['console'],
             'level': 'INFO'
         },
-        'neo4j': {
-            'level': 'ERROR'
+        'neo4j.bolt': {
+            'level': 'ERROR',
+            'handlers': ['console']
         }
     }
 }
+
+# LOGIN_URL = '/raxauth/login/' # RAX AUTH
+LOGIN_URL = '/web/login/' # DB AUTH
+
+
+LOGIN_REDIRECT_URL = '/web/'
+
+# AUTH_USER_MODEL = 'raxauth.RaxAuthUser' # RAX AUTH
+# AUTHENTICATION_BACKENDS = [ # RAX AUTH
+#    'raxauth.backend.RaxAuthBackend' # RAX AUTH
+#] # RAX AUTH
+
+#RAXAUTH_AUTH_URL = 'https://someurl.com' # RAX AUTH
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    )
+}
+

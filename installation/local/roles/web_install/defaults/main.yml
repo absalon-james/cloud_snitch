@@ -5,9 +5,11 @@ cloud_snitch_version: master
 cloud_snitch_web_allowed_hosts:
   - '*'
 
-
 cloud_snitch_web_user: www-data
 cloud_snitch_web_group: www-data
+
+cloud_snitch_web_raxauth_enabled: False
+cloud_snitch_web_raxauth_auth_url: ''
 
 cloud_snitch_web_log_dir: /var/log/cloud_snitch_web
 
@@ -40,9 +42,21 @@ cloud_snitch_web_cache_options:
   CLIENT_CACHE: django_redis.client.DefaultClient
   MAX_ENTRIES: 5000
 
+cloud_snitch_web_session_timeout: 3600
+cloud_snitch_web_session_engine: 'django.contrib.sessions.backends.cache'
+cloud_snitch_web_session_cache_alias: 'sessions'
+cloud_snitch_web_session_cache_backend: 'django_redis.cache.RedisCache'
+cloud_snitch_web_session_cache_location: 'redis://localhost:6379/3'
+cloud_snitch_web_session_cache_timeout: 3600
+cloud_snitch_web_session_cache_key_prefix: cloud_snitch_sessions
+cloud_snitch_web_session_cache_options:
+  CLIENT_CACHE: django_redis.client.DefaultClient
+  MAX_ENTRIES: 5000
+
 cloud_snitch_web_csrf_cookie_name: _cloud_snitch_csrf_cookie_
 
-cloud_snitch_web_login_url: '/web/login/'
+
+cloud_snitch_web_login_url: '{% if cloud_snitch_web_raxauth_enabled %}/raxauth/login/{% else %}/web/login/{% endif %}'
 cloud_snitch_web_login_redirect_url: '/web/'
 
 cloud_snitch_web_superuser_username: 'cloudsnitchadmin'
@@ -69,12 +83,10 @@ cloud_snitch_web_pip_pkgs:
   PyYAML: '3.12.'
   django-redis: 4.9.0
 
-
 cloud_snitch_web_alt_name: "{{ ansible_default_ipv4.address }}"
 cloud_snitch_web_self_signed_subject: "/C=US/ST=Texas/L=San Antonio/O=IT/CN={{ cloud_snitch_web_server_name }}/subjectAltName=IP.1={{ cloud_snitch_web_alt_name }}"
 cloud_snitch_web_ssl_key: /etc/ssl/private/cloudsnitchweb.key
 cloud_snitch_web_ssl_cert: /etc/ssl/certs/cloudsnitchweb.pem
-
 
 cloud_snitch_web_celery_user: "{{ cloud_snitch_web_user }}"
 cloud_snitch_web_celery_group: "{{ cloud_snitch_web_group }}"

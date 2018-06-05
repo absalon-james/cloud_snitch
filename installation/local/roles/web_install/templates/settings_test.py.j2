@@ -20,15 +20,13 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '{{ cloud_snitch_web_secret_key }}'
+SECRET_KEY = 'gfhslknvioouhgaladllajho'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = {{ cloud_snitch_web_debug }}
+DEBUG = False
 
 ALLOWED_HOSTS = [
-{% for host in cloud_snitch_web_allowed_hosts %}
-    '{{ host }}',
-{% endfor %}
+    '*',
 ]
 
 
@@ -44,10 +42,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_celery_results',
     'neo4jdriver',
-    {% if cloud_snitch_web_raxauth_enabled %}'raxauth',{% endif %}
     'web.apps.WebConfig',
     'common.apps.CommonConfig',
-    'api.apps.ApiConfig'
+    'api.apps.ApiConfig',
+    'raxauth' # RAX AUTH
 ]
 
 MIDDLEWARE = [
@@ -55,11 +53,8 @@ MIDDLEWARE = [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-    {% if cloud_snitch_web_raxauth_enabled %}
-    'raxauth.middleware.AuthenticationMiddleware',
-    {% else %}
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    {% endif %}
+    'django.contrib.auth.middleware.AuthenticationMiddleware', # Normal db auth
+    #'raxauth.middleware.AuthenticationMiddleware', # auth from rackspace
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -88,25 +83,19 @@ WSGI_APPLICATION = 'cloud_snitch_web.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
-{% if not cloud_snitch_web_raxauth_enabled %}
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db', 'db.sqlite3'),
     }
 }
-{% endif %}
 
 NEO4J = {
-    'username': "{{ cloud_snitch_web_neo4j_username }}",
-    'password': "{{ cloud_snitch_web_neo4j_password }}",
-    'uri': "{{ cloud_snitch_web_neo4j_uri }}",
-{% if cloud_snitch_web_neo4j_max_connection_lifetime is defined %}
-    'max_connection_lifetime':  {{ cloud_snitch_web_neo4j_max_connection_lifetime }},
-{% endif %}
-{% if cloud_snitch_web_neo4j_max_connection_pool_size is defined %}
-    'max_connection_pool_size': {{ cloud_snitch_web_neo4j_max_connection_pool_size }},
-{% endif %}
+    'username': "neo4j_user",
+    'password': "neo4j_password",
+    'uri': "neo4j_uri",
+    'max_connection_lifetime':  300,
+    'max_connection_pool_size': 50,
 }
 
 # Password validation
@@ -146,42 +135,40 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = '{{ cloud_snitch_web_static_root }}'
+STATIC_ROOT = '/opt/web/cloud_snitch/web/static'
 
-CELERY_RESULT_BACKEND = '{{ cloud_snitch_web_celery_result_backend }}'
-CELERY_BROKER_URL = '{{ cloud_snitch_web_celery_broker_url }}'
-CELERY_BROKER_TRANSPORT_OPTIONS = {{ cloud_snitch_web_celery_broker_transport_options }}
+CELERY_RESULT_BACKEND = 'django-cache'
+CELERY_BROKER_URL = 'redis://localhost:6379/1'
+CELERY_BROKER_TRANSPORT_OPTIONS = {'socket_timeout': 60}
 
 CACHES = {
     'default': {
-        'BACKEND': '{{ cloud_snitch_web_cache_backend }}',
-        'LOCATION': '{{ cloud_snitch_web_cache_location }}',
-        'TIMEOUT': {{ cloud_snitch_web_cache_timeout }},
-        'KEY_PREFIX': '{{ cloud_snitch_web_cache_key_prefix }}',
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/0',
+        'TIMEOUT': 3600,
+        'KEY_PREFIX': 'cloud_snitch',
         'OPTIONS': {
-{% for name, value in cloud_snitch_web_cache_options.items() %}
-            '{{ name }}': '{{ value }}',
-{% endfor %}
+            'MAX_ENTRIES': '5000',
+            'CLIENT_CACHE': 'django_redis.client.DefaultClient',
         },
     },
-    '{{ cloud_snitch_web_session_cache_alias }}': {
-        'BACKEND': '{{ cloud_snitch_web_session_cache_backend }}',
-        'LOCATION': '{{ cloud_snitch_web_session_cache_location }}',
-        'TIMEOUT': {{ cloud_snitch_web_session_cache_timeout }},
-        'KEY_PREFIX': '{{ cloud_snitch_web_session_cache_key_prefix }}',
+    'sessions': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://localhost:6379/3',
+        'TIMEOUT': 3600,
+        'KEY_PREFIX': 'cloud_snitch_sessions',
         'OPTIONS': {
-{% for name, value in cloud_snitch_web_session_cache_options.items() %}
-            '{{ name }}': '{{ value }}',
-{% endfor %}
+            'MAX_ENTRIES': '5000',
+            'CLIENT_CACHE': 'django_redis.client.DefaultClient',
         },
     }
 }
 
-SESSION_CACHE_ALIAS = '{{ cloud_snitch_web_session_cache_alias }}'
-SESSION_TIMEOUT = {{ cloud_snitch_web_session_timeout }}
-SESSION_ENGINE = '{{ cloud_snitch_web_session_engine }}'
+SESSION_CACHE_ALIAS = 'sessions'
+SESSION_TIMEOUT = 3600
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 
-CSRF_COOKIE_NAME = '{{ cloud_snitch_web_csrf_cookie_name }}'
+CSRF_COOKIE_NAME = '_cloud_snitch_csrf_cookie_'
 
 DEFAULT_CACHE_TIMEOUT = 30
 
@@ -216,21 +203,17 @@ LOGGING = {
             'level': 'INFO'
         },
         'neo4j.bolt': {
-            'level': 'ERROR'
+            'level': 'ERROR',
+            'handlers': ['console']
         }
     }
 }
 
-LOGIN_URL = '{{ cloud_snitch_web_login_url }}'
-LOGIN_REDIRECT_URL = '{{ cloud_snitch_web_login_redirect_url }}'
+LOGIN_URL = '/web/login/' # DB AUTH
 
-{% if cloud_snitch_web_raxauth_enabled %}
-AUTH_USER_MODEL = 'raxauth.RaxAuthUser'
-AUTHENTICATION_BACKENDS = [
-    'raxauth.backend.RaxAuthBackend'
-]
-RAXAUTH_AUTH_URL = '{{ cloud_snitch_web_raxauth_auth_url }}'
-{% endif %}
+LOGIN_REDIRECT_URL = '/web/'
+
+RAXAUTH_AUTH_URL = 'https://someurl.com'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (

@@ -50,6 +50,20 @@
     - Restart Apache2
     - Restart Celery Worker
 
+- name: Cloud Snitch Web - Settings Test
+  template:
+    src: settings_test.py.j2
+    dest: "{{ cloud_snitch_web_app_dir }}/settings_test.py"
+
+- name: Cloud Snitch Web - Urls
+  template:
+    src: urls.py.j2
+    dest: "{{ cloud_snitch_web_app_dir }}/urls.py"
+  tags:
+    - config
+  notify:
+    - Restart Apache2
+
 - include: apache2.yml
   tags:
     - apache
@@ -75,6 +89,7 @@
     app_path: "{{ cloud_snitch_web_project_dir }}"
     virtualenv: "{{ cloud_snitch_web_venv }}"
     command: "migrate"
+  when: not cloud_snitch_web_raxauth_enabled
 
 - name: Cloud Snitch Web - Database File Permissions
   file:
@@ -95,9 +110,10 @@
     virtualenv: '{{ cloud_snitch_web_venv }}'
     command: 'shell -c "from django.contrib.auth.models import User; print(User.objects.filter(is_superuser=True).exists())"'
   register: superuser_exists
+  when: not cloud_snitch_web_raxauth_enabled
 
 - name: Cloud Snitch Web - Create superuser if it doesnt exist
-  when: superuser_exists.out.find("True") == -1
+  when: not cloud_snitch_web_raxauth_enabled and superuser_exists.out.find("True") == -1
   django_manage:
     app_path: '{{ cloud_snitch_web_project_dir }}'
     virtualenv: '{{ cloud_snitch_web_venv }}'

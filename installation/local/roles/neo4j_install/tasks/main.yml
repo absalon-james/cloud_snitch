@@ -34,6 +34,13 @@
   shell: "neo4j-admin set-initial-password '{{ neo4j_password }}'"
   ignore_errors: True
 
+- name: Neo4j - Auth directory permissions
+  file:
+    path: '{{ neo4j_home }}/data/dbms'
+    state: directory
+    owner: '{{ neo4j_user }}'
+    group: '{{ neo4j_group }}'
+
 - name: Neo4j - configuration
   template:
     src: neo4j.conf.j2

@@ -97,6 +97,7 @@
     mode: 0600
     owner: "{{ cloud_snitch_web_user }}"
     group: "{{ cloud_snitch_web_group }}"
+  when: not cloud_snitch_web_raxauth_enabled
 
 - name: Cloud Snitch Web - Collect Static
   django_manage:

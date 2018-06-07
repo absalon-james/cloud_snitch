@@ -82,6 +82,7 @@ cloud_snitch_web_pip_pkgs:
   redis: 2.10.6
   PyYAML: '3.12.'
   django-redis: 4.9.0
+  requests: 2.18.4
 
 cloud_snitch_web_alt_name: "{{ ansible_default_ipv4.address }}"
 cloud_snitch_web_self_signed_subject: "/C=US/ST=Texas/L=San Antonio/O=IT/CN={{ cloud_snitch_web_server_name }}/subjectAltName=IP.1={{ cloud_snitch_web_alt_name }}"

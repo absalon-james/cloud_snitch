@@ -62,8 +62,8 @@ def generate_host(name, data, hostvars_dir):
                 '"{{ core_account }}"\n'
             )
             f.write(
-                'cloud_snitch_environment_name: {}\n'
-                .format(environment_name)
+                'cloud_snitch_environment_name: {}-{}\n'
+                .format(customer_name, environment_name)
             )
             for s in snitches:
                 f.write('#cloud_snitch_{}_enabled: False\n'.format(s))

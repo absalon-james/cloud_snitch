@@ -89,7 +89,7 @@ class ActionModule(ActionBase):
     ):
         """Run the old version."""
         task_vars = inject
-        result = dict(changed=False, payload=None, doctype='facts')
+        result = dict(changed=False, payload=None, doctype='uservars')
 
         # Only save data if cloud snitch is enabled
         if not os.environ.get('CLOUD_SNITCH_ENABLED'):

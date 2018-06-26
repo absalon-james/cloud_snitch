@@ -93,7 +93,7 @@ class GitSnitcher(BaseSnitcher):
             working_tree_diff_md5 = None
         else:
             m = hashlib.md5()
-            m.update(''.join(working_tree_diff))
+            m.update(''.join(working_tree_diff).encode('utf-8'))
             working_tree_diff_md5 = m.hexdigest()
 
         # Make instance of the git repo

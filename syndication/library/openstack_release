@@ -1,0 +1,141 @@
+#!/usr/bin/python
+
+DOCUMENTATION = '''
+---
+module: openstack_release
+
+short_description: Parses information from /etc/openstack-release
+
+version_added: "1.7.0"
+
+description:
+    - Parses information from /etc/openstack-release
+    - Returns data in a format that can be used to branch in ansible.
+
+author:
+    - James Absalon
+'''
+
+RETURN = '''
+DISTRIB_ID:
+    description: Id of the release. usually "OSA"
+    type: str|None
+DISTRIB_RELEASE:
+    description: Release version. Example: "r14.0.0"
+    type: str|None
+DISTRIB_CODENAME:
+    description: Name of the release. Examples: ["Liberty", "Mitaka"]
+    type: str
+DISTRIB_DESCRIPTION:
+    description: Release description
+    type: str
+major_release:
+    description: First portion of DISTRIB_RELEASE as an integer.
+    type: int
+'''
+
+KEYS = [
+    'DISTRIB_ID',
+    'DISTRIB_RELEASE',
+    'DISTRIB_CODENAME',
+    'DISTRIB_DESCRIPTION'
+]
+
+RELEASE_FILE = '/etc/openstack-release'
+
+
+def major_release(release_string):
+    """Pull major release from release string as an integer.
+
+    Sometimes the releases will be "rx.y.z".  This function will also remove
+    any prefixing 'r'.
+
+    :param release_string: Release string to parse. Usually 'x.y.z'
+    :type release_string: str
+    :returns: Parsed x from 'x.y.z' as an integer
+    :rtype: int
+    """
+    parts = release_string.split('.')
+    major_str = parts[0]
+    if major_str.startswith('r'):
+        major_str = major_str[1:]
+    try:
+        major_int = int(major_str)
+    except ValueError:
+        major_int = None
+    return major_int
+
+
+def parse_file(filename):
+    """Parses a file for openstack release information.
+
+    Ignore all lines not starting with DISTRIB.
+    Break lines starting with DISTRIB on the first '='
+    Strip quotes from values.
+    Assemble data into dict and return.
+
+    Return None if OsError when reading file.
+
+    :param filename: Name of the file to parse release information from.
+    :type filename: str
+    :returns: Dict with release data
+    :rtype: dict
+    """
+    # Prep the result with none values in case of error.
+    result = {}
+    for key in KEYS:
+        result[key] = None
+
+    result['major_release'] = None
+
+    try:
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+
+        # Iterate lines in file.
+        for line in lines:
+            if line.startswith('DISTRIB'):
+                key, value = line.split('=', 1)
+                # Remove white space
+                key = key.strip()
+                value = value.strip()
+                # Remove quotes
+                value = value.strip('"')
+                if key in KEYS:
+                    result[key] = value
+
+        # Get major release from DISTRIB_RELEASE
+        if result.get('DISTRIB_RELEASE') is not None:
+            result['major_release'] = major_release(result['DISTRIB_RELEASE'])
+    except IOError:
+        # Host probably does not have osa.
+        pass
+
+    return result
+
+
+def run_module():
+    """Run the ansible module."""
+    module_args = dict()
+
+    result = dict(
+        changed=False,
+    )
+
+    module = AnsibleModule(  # noqa F405
+        argument_spec=module_args,
+        supports_check_mode=True
+    )
+
+    data = parse_file(RELEASE_FILE)
+    result.update(data)
+    module.exit_json(**result)
+
+
+def main():
+    run_module()
+
+
+from ansible.module_utils.basic import *  # noqa E405
+
+main()

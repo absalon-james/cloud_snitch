@@ -1,5 +1,10 @@
 ---
-- name: Run snitch collector
+- name: Get Openstack Release Data
+  openstack_release:
+  register: osa_details
+
+- name: Run snitch collector - Newton +
+  become: yes
   command: "openstack-ansible snitch.yml"
   environment:
     CLOUD_SNITCH_ENABLED: true
@@ -9,6 +14,27 @@
     chdir: "{{ cloud_snitch_playbook | dirname }}"
   tags:
     - collect
+  when: osa_details.major_release and osa_details.major_release >= 14
+
+- name: Debug inventories
+  debug:
+    msg: "{{ cloud_snitch_inventory_locations | join(':') }}"
+
+- name: Run snitch collector - Mitaka -
+  become: yes
+  command: "openstack-ansible snitch.yml"
+  environment:
+    CLOUD_SNITCH_ENABLED: true
+    CLOUD_SNITCH_CONF_FILE: "{{ cloud_snitch_conf_file }}"
+    ANSIBLE_INVENTORY: "{{ cloud_snitch_inventory_locations | join(':') }}"
+    ANSIBLE_SSH_PIPELINING: "True"
+    ANSIBLE_HOST_KEY_CHECKING: "False"
+  ignore_errors: yes
+  args:
+    chdir: "{{ cloud_snitch_playbook | dirname }}"
+  tags:
+    - collect
+  when: osa_details.major_release and osa_details.major_release < 14
 
 - name: Find all cloud_snitch data sets
   find:
@@ -20,6 +46,7 @@
     - collect
 
 - name: Archive all datasets
+  become: yes
   archive:
     path: "{{ item.path }}"
     dest: "{{ item.path }}.tar.gz"
@@ -50,6 +77,7 @@
     - collect
 
 - name: Remove archive
+  become: yes
   file:
     state: absent
     path: "{{ item.path }}"

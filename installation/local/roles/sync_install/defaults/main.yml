@@ -17,7 +17,7 @@ cloud_snitch_neo4j_max_retries: 10
 
 cloud_snitch_sync_venv: '/opt/venvs/cloudsnitch'
 
-cloud_snitch_repo: https://github.com/absalon-james/cloud_snitch.git
+cloud_snitch_repo: https://github.com/rcbops/FleetDeploymentReporting.git
 cloud_snitch_version: master
 
 cloud_snitch_sync_pip_list:

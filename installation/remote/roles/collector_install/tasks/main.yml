@@ -1,16 +1,19 @@
 ---
 - name: Clone cloud_snitch git repo
+  become: yes
   git:
     repo:  "{{ cloud_snitch_repo }}"
     dest:  "{{ cloud_snitch_repo_dir }}"
 
 - name: Install GitPython into ansible runtime venv
+  become: yes
   pip:
     name: "{{ git_python }}"
     version: "{{ git_python_version }}"
     extra_args: --isolated
 
 - name: Create Directories
+  become: yes
   file:
     state: directory
     path: "{{ item }}"
@@ -21,6 +24,7 @@
     - config
 
 - name: Template cloud_snitch.yml config
+  become: yes
   template:
     src: cloud_snitch.yml.j2
     dest: "{{ cloud_snitch_conf_file }}"
@@ -28,9 +32,10 @@
     - config
 
 - name: Template cloud_snitch.rc
+  become: yes
   template:
     src: cloud_snitch.rc.j2
-    dest: "{{ '~/.cloud_snitch.rc'|expanduser }}"
+    dest: "{{ cloud_snitch_rc_file }}"
   tags:
     - config
 

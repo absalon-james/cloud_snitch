@@ -1,5 +1,6 @@
 ---
-cloud_snitch_repo: https://github.com/absalon-james/cloud_snitch.git
+cloud_snitch_repo: https://github.com/rcbops/FleetDeploymentReporting.git
+
 cloud_snitch_version: master
 
 cloud_snitch_web_allowed_hosts:
@@ -13,7 +14,7 @@ cloud_snitch_web_raxauth_auth_url: ''
 
 cloud_snitch_web_log_dir: /var/log/cloud_snitch_web
 
-cloud_snitch_web_repo: https://github.com/absalon-james/cloud_snitch.git
+cloud_snitch_web_repo: https://github.com/rcbops/FleetDeploymentReporting.git
 cloud_snitch_web_repo_dir: /opt/web/cloud_snitch
 cloud_snitch_web_project_dir: "{{ cloud_snitch_web_repo_dir }}/web"
 cloud_snitch_web_app_dir: "{{ cloud_snitch_web_project_dir }}/cloud_snitch_web"
